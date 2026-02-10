@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+    --font-family-sans: 'Inter', system-ui, sans-serif;
+
+    /* Paleta NR1 - Azul Marinho (Autoridade), Branco (Transparência), Cinza (Neutralidade) */
+    --color-primary-50: #f0f4f8;
+    --color-primary-100: #d9e2ec;
+    --color-primary-200: #bcccdc;
+    --color-primary-300: #9fb3c8;
+    --color-primary-400: #829ab1;
+    --color-primary-500: #627d98;
+    --color-primary-600: #486581;
+    --color-primary-700: #334e68;
+    --color-primary-800: #243b53;
+    --color-primary-900: #102a43;
+    --color-primary-950: #0a1929;
+}
+
+:root {
+    --foreground-rgb: 15, 23, 42;
+    --background-start-rgb: 248, 250, 252;
+    --background-end-rgb: 241, 245, 249;
+}
+
+body {
+    color: rgb(var(--foreground-rgb));
+    background: linear-gradient(to bottom,
+            rgb(var(--background-start-rgb)),
+            rgb(var(--background-end-rgb)));
+    font-family: var(--font-family-sans);
+    min-height: 100vh;
+}
+
+/* Paleta NR1 - Azul Marinho (Autoridade), Branco (Transparência), Cinza (Neutralidade) */
+.bg-authority {
+    background-color: #102a43;
+}
+
+.text-authority {
+    color: #102a43;
+}
+
+.border-authority {
+    border-color: #102a43;
+}
+
+/* Card com efeito de vidro */
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+/* Botão primário NR1 */
+.btn-primary {
+    background-color: #102a43;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #243b53;
+}
+
+.btn-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #627d98, 0 0 0 4px white;
+}
+
+.btn-secondary {
+    background-color: white;
+    color: #102a43;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    border: 2px solid #102a43;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: #f0f4f8;
+}
+
+/* Inputs */
+.input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #627d98;
+    box-shadow: 0 0 0 2px rgba(98, 125, 152, 0.25);
+}
+
+.input-field::placeholder {
+    color: #94a3b8;
+}
+
+/* Badge de status */
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-nova {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-em_analise {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge-procedente {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.badge-improcedente {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-arquivada {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Acessibilidade WCAG 2.1 */
+:focus-visible {
+    outline: 2px solid #102a43;
+    outline-offset: 2px;
+}
+
+/* Skip link para acessibilidade */
+.skip-link {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translateY(-100%);
+    padding: 1rem;
+    background-color: #102a43;
+    color: white;
+    transition: transform 0.2s;
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}

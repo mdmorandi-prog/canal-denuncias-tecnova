@@ -1,0 +1,130 @@
+// Prisma Schema - Canal de Denúncias HSC
+// Sistema de Canal de Denúncias conforme NR1 e Lei 14.457/22
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./denuncias.db"
+}
+
+// ==================== DENÚNCIAS ====================
+
+model Complaint {
+  id       String @id @default(cuid())
+  protocol String @unique // Hash SHA-256 truncado para acompanhamento
+
+  // Tipo de ocorrência
+  type String // assedio_moral, assedio_sexual, corrupcao, seguranca_paciente, outros
+
+  // Localização
+  unit           String? // Unidade hospitalar
+  sector         String? // Setor
+  shift          String? // Turno
+  occurrenceDate DateTime? // Data da ocorrência
+
+  // Denunciado
+  accusedName     String? // Nome do denunciado
+  accusedPosition String? // Cargo do denunciado
+
+  // Detalhes
+  description String // Descrição detalhada
+  witnesses   String? // Testemunhas (JSON array)
+
+  // Denunciante
+  isAnonymous   Boolean @default(true)
+  reporterName  String? // Nome (se identificado)
+  reporterEmail String? // E-mail para contato
+  reporterPhone String? // Telefone para contato
+  wantsResponse Boolean @default(false) // Deseja retorno?
+
+  // Status
+  status   String @default("nova") // nova, em_analise, procedente, improcedente, arquivada
+  priority String @default("normal") // baixa, normal, alta, urgente
+
+  // Datas
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  closedAt  DateTime?
+
+  // Relacionamentos
+  attachments ComplaintAttachment[]
+  messages    ComplaintMessage[]
+
+  // Responsável pela análise
+  assignedTo String? // ID do membro do comitê
+}
+
+// ==================== ANEXOS (EVIDÊNCIAS) ====================
+
+model ComplaintAttachment {
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  filename String // Nome original do arquivo
+  filepath String // Caminho criptografado no servidor
+  mimetype String // Tipo do arquivo
+  size     Int // Tamanho em bytes
+
+  createdAt DateTime @default(now())
+}
+
+// ==================== MENSAGENS (ACOMPANHAMENTO) ====================
+
+model ComplaintMessage {
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  sender  String // "denunciante" ou "comite"
+  message String // Conteúdo da mensagem
+  isRead  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+// ==================== MEMBROS DO COMITÊ ====================
+
+model CommitteeMember {
+  id       String  @id @default(cuid())
+  name     String
+  email    String  @unique
+  password String
+  role     String  @default("membro") // coordenador, membro
+  active   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== LOG DE AUDITORIA ====================
+
+model AuditLog {
+  id         String  @id @default(cuid())
+  action     String // visualizacao, alteracao_status, resposta, etc.
+  entityType String // complaint, message
+  entityId   String
+  userId     String? // Membro do comitê (null se sistema)
+  details    String? // JSON com detalhes
+
+  createdAt DateTime @default(now())
+}
+
+// ==================== CONFIGURAÇÕES DO SISTEMA ====================
+
+model EmailConfig {
+  id     String  @id @default(cuid())
+  host   String
+  port   Int
+  secure Boolean @default(false)
+  user   String
+  pass   String // Armazenar criptografado futuramente? Por enquanto plaintext ou base64 simples
+  from   String  @default("Canal de Denúncias <no-reply@hospital.com>")
+
+  updatedAt DateTime @updatedAt
+  updatedBy String? // ID do usuário que atualizou
+}
