@@ -1,36 +1,33 @@
-// Script para criar usuário do comitê
-// Executar com: npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
-
-import { PrismaClient } from '../src/generated/prisma'
+import { PrismaClient } from '../src/generated/prisma/index.js'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
-    // Criar membro do comitê padrão
-    const hashedPassword = await bcrypt.hash('comite123', 10)
+    const email = 'admin@hsc.com.br'
+    const password = 'admin' // In production, use a strong password
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    const member = await prisma.committeeMember.upsert({
-        where: { email: 'comite@hospitalsaocarlos.com.br' },
+    const user = await prisma.committeeMember.upsert({
+        where: { email },
         update: {},
         create: {
-            name: 'Coordenador do Comitê',
-            email: 'comite@hospitalsaocarlos.com.br',
+            email,
+            name: 'Administrador do Comitê',
             password: hashedPassword,
-            role: 'coordenador',
-            active: true,
+            role: 'admin',
         },
     })
 
-    console.log('Membro do comitê criado:', member.email)
-    console.log('Senha: comite123')
+    console.log({ user })
 }
 
 main()
-    .catch((e) => {
-        console.error(e)
-        process.exit(1)
-    })
-    .finally(async () => {
+    .then(async () => {
         await prisma.$disconnect()
+    })
+    .catch(async (e) => {
+        console.error(e)
+        await prisma.$disconnect()
+        process.exit(1)
     })

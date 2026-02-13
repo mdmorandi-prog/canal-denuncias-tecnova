@@ -95,10 +95,13 @@ function AcompanharContent() {
         setSendingMessage(true)
 
         try {
-            const response = await fetch(`/api/complaints/${complaint.protocol}/messages`, {
+            const response = await fetch(`/api/complaints/track/message`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: newMessage }),
+                body: JSON.stringify({
+                    protocol: complaint.protocol,
+                    message: newMessage
+                }),
             })
 
             if (!response.ok) {

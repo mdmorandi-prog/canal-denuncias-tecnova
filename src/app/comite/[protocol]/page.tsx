@@ -1,10 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { useState, useEffect, Suspense, use } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
     ChevronLeft,
     Clock,
@@ -15,38 +12,46 @@ import {
     MessageCircle,
     Send,
     Loader2,
-    User,
-    MapPin,
-    Calendar,
     FileText,
+    Download,
+    User,
+    Calendar,
+    MapPin,
     AlertTriangle,
-    RefreshCw,
-    LogOut
+    Save
 } from 'lucide-react'
 
+// Types
 interface Message {
     id: string
-    sender: string
+    sender: 'denunciante' | 'comite'
     message: string
     createdAt: string
     isRead: boolean
+}
+
+interface Attachment {
+    id: string
+    filename: string
+    mimeType: string
+    size: number
 }
 
 interface Complaint {
     id: string
     protocol: string
     type: string
-    status: string
-    priority: string
-    isAnonymous: boolean
+    status: string // nova, em_analise, procedente, improcedente, arquivada
+    priority: string // baixa, normal, alta, urgente
+    description: string
     unit?: string
     sector?: string
     shift?: string
     occurrenceDate?: string
     accusedName?: string
     accusedPosition?: string
-    description: string
     witnesses?: string
+    isAnonymous: boolean
     reporterName?: string
     reporterEmail?: string
     reporterPhone?: string
@@ -54,15 +59,23 @@ interface Complaint {
     createdAt: string
     updatedAt: string
     messages: Message[]
+    attachments: Attachment[]
 }
 
-const STATUS_INFO: Record<string, { label: string; icon: typeof Clock; color: string }> = {
-    nova: { label: 'Nova', icon: Clock, color: 'bg-blue-100 text-blue-800' },
-    em_analise: { label: 'Em Análise', icon: AlertTriangle, color: 'bg-yellow-100 text-yellow-800' },
-    procedente: { label: 'Procedente', icon: CheckCircle, color: 'bg-green-100 text-green-800' },
-    improcedente: { label: 'Improcedente', icon: XCircle, color: 'bg-red-100 text-red-800' },
-    arquivada: { label: 'Arquivada', icon: Archive, color: 'bg-neutral-100 text-neutral-800' },
-}
+const STATUS_OPTIONS = [
+    { value: 'nova', label: 'Nova' },
+    { value: 'em_analise', label: 'Em Análise' },
+    { value: 'procedente', label: 'Procedente' },
+    { value: 'improcedente', label: 'Improcedente' },
+    { value: 'arquivada', label: 'Arquivada' },
+]
+
+const PRIORITY_OPTIONS = [
+    { value: 'baixa', label: 'Baixa', color: 'bg-green-100 text-green-800' },
+    { value: 'normal', label: 'Normal', color: 'bg-blue-100 text-blue-800' },
+    { value: 'alta', label: 'Alta', color: 'bg-orange-100 text-orange-800' },
+    { value: 'urgente', label: 'Urgente', color: 'bg-red-100 text-red-800' },
+]
 
 const TIPO_LABELS: Record<string, string> = {
     assedio_moral: 'Assédio Moral',
@@ -73,35 +86,34 @@ const TIPO_LABELS: Record<string, string> = {
     outros: 'Outros',
 }
 
-const TURNO_LABELS: Record<string, string> = {
-    matutino: 'Matutino (06h - 12h)',
-    vespertino: 'Vespertino (12h - 18h)',
-    noturno: 'Noturno (18h - 06h)',
-    nao_sei: 'Não informado',
-}
-
-export default function ComplaintDetailPage() {
-    const params = useParams()
-    const router = useRouter()
-    const protocol = params.protocol as string
+function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) {
+    const { protocol } = use(params)
 
     const [complaint, setComplaint] = useState<Complaint | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+
+    // Actions State
     const [newMessage, setNewMessage] = useState('')
     const [sendingMessage, setSendingMessage] = useState(false)
-    const [updatingStatus, setUpdatingStatus] = useState(false)
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [selectedStatus, setSelectedStatus] = useState('')
+    const [selectedPriority, setSelectedPriority] = useState('')
 
     const fetchComplaint = async () => {
+        setLoading(true)
         try {
             const response = await fetch(`/api/complaints/${protocol}`)
             if (!response.ok) {
-                throw new Error('Denúncia não encontrada')
+                if (response.status === 401) window.location.href = '/comite/login'
+                throw new Error('Erro ao carregar denúncia')
             }
             const data = await response.json()
             setComplaint(data)
+            setSelectedStatus(data.status)
+            setSelectedPriority(data.priority)
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Erro ao carregar denúncia')
+            setError(err instanceof Error ? err.message : 'Erro desconhecido')
         } finally {
             setLoading(false)
         }
@@ -111,7 +123,7 @@ export default function ComplaintDetailPage() {
         fetchComplaint()
     }, [protocol])
 
-    const sendMessage = async () => {
+    const handleSendMessage = async () => {
         if (!newMessage.trim() || !complaint) return
 
         setSendingMessage(true)
@@ -119,351 +131,275 @@ export default function ComplaintDetailPage() {
             const response = await fetch(`/api/complaints/${protocol}/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: newMessage, sender: 'comite' }),
+                body: JSON.stringify({ message: newMessage }),
             })
 
-            if (!response.ok) {
-                throw new Error('Erro ao enviar mensagem')
-            }
+            if (!response.ok) throw new Error('Erro ao enviar mensagem')
 
             setNewMessage('')
-            fetchComplaint()
+            fetchComplaint() // Refresh to show new message
         } catch (err) {
-            setError('Erro ao enviar mensagem')
+            alert('Erro ao enviar mensagem')
         } finally {
             setSendingMessage(false)
         }
     }
 
-    const updateStatus = async (newStatus: string) => {
+    const handleUpdateComplaint = async () => {
         if (!complaint) return
 
-        setUpdatingStatus(true)
+        setIsUpdating(true)
         try {
             const response = await fetch(`/api/complaints/${protocol}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }),
+                body: JSON.stringify({
+                    status: selectedStatus,
+                    priority: selectedPriority
+                }),
             })
 
-            if (!response.ok) {
-                throw new Error('Erro ao atualizar status')
-            }
+            if (!response.ok) throw new Error('Erro ao atualizar')
 
+            alert('Denúncia atualizada com sucesso!')
             fetchComplaint()
         } catch (err) {
-            setError('Erro ao atualizar status')
+            alert('Erro ao atualizar denúncia')
         } finally {
-            setUpdatingStatus(false)
+            setIsUpdating(false)
         }
     }
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-            </div>
-        )
-    }
-
-    if (error || !complaint) {
-        return (
-            <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
-                <div className="bg-white rounded-xl p-8 text-center max-w-md">
-                    <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                    <h1 className="text-xl font-bold text-neutral-900 mb-2">Erro</h1>
-                    <p className="text-neutral-600 mb-4">{error || 'Denúncia não encontrada'}</p>
-                    <Link href="/comite" className="btn-primary">
-                        Voltar ao Painel
-                    </Link>
-                </div>
-            </div>
-        )
-    }
+    if (loading) return <div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-600" /></div>
+    if (error || !complaint) return <div className="p-8 text-center text-red-600 font-bold">{error || 'Denúncia não encontrada'}</div>
 
     return (
-        <div className="min-h-screen bg-neutral-100">
+        <div className="min-h-screen bg-slate-50">
             {/* Header */}
-            <header className="bg-primary-900 text-white py-4">
-                <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+            <header className="bg-white border-b sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link href="/comite" className="flex items-center gap-2 text-primary-200 hover:text-white transition">
-                            <ChevronLeft className="h-5 w-5" />
-                            Voltar
+                        <Link href="/comite" className="text-slate-500 hover:text-primary-600 transition">
+                            <ChevronLeft className="h-6 w-6" />
                         </Link>
-                        <div className="h-8 w-px bg-primary-700" />
-                        <Image
-                            src="/logo-hsc.png"
-                            alt="Hospital São Carlos"
-                            width={180}
-                            className="h-14 w-auto"
-                        />
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={fetchComplaint}
-                            className="text-primary-200 hover:text-white transition flex items-center gap-2"
-                        >
-                            <RefreshCw className="h-4 w-4" />
-                            Atualizar
-                        </button>
-                        <button
-                            onClick={() => signOut({ callbackUrl: '/comite/login' })}
-                            className="bg-red-500/10 hover:bg-red-500/20 text-red-200 hover:text-red-100 p-2 rounded-lg transition flex items-center gap-2"
-                            title="Sair do sistema"
-                        >
-                            <LogOut className="h-5 w-5" />
-                            <span className="text-sm font-medium">Sair</span>
-                        </button>
+                        <h1 className="text-xl font-bold text-slate-800">
+                            Protocolo: <span className="font-mono text-primary-600">{complaint.protocol}</span>
+                        </h1>
+                        <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm font-medium border border-primary-100">
+                            {TIPO_LABELS[complaint.type] || complaint.type}
+                        </span>
                     </div>
                 </div>
             </header>
 
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="grid lg:grid-cols-3 gap-6">
-                    {/* Coluna Principal */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    {/* Left Column: Details & Actions */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Cabeçalho da Denúncia */}
-                        <div className="bg-white rounded-xl shadow-sm p-6">
-                            <div className="flex items-start justify-between mb-4">
+                        {/* Status & Priority Card */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                                Gestão do Caso
+                            </h2>
+                            <div className="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <p className="text-sm text-neutral-500 mb-1">Protocolo</p>
-                                    <p className="text-2xl font-mono font-bold text-primary-900">{complaint.protocol}</p>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                                    <select
+                                        value={selectedStatus}
+                                        onChange={(e) => setSelectedStatus(e.target.value)}
+                                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-100 outline-none"
+                                    >
+                                        {STATUS_OPTIONS.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    {STATUS_INFO[complaint.status] && (
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_INFO[complaint.status].color}`}>
-                                            {STATUS_INFO[complaint.status].label}
-                                        </span>
-                                    )}
-                                    {complaint.isAnonymous && (
-                                        <span className="px-3 py-1 rounded-full text-sm font-medium bg-neutral-100 text-neutral-600">
-                                            Anônimo
-                                        </span>
-                                    )}
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Prioridade</label>
+                                    <select
+                                        value={selectedPriority}
+                                        onChange={(e) => setSelectedPriority(e.target.value)}
+                                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-100 outline-none"
+                                    >
+                                        {PRIORITY_OPTIONS.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
-
-                            <div className="grid md:grid-cols-2 gap-4 text-sm">
-                                <div className="flex items-center gap-2 text-neutral-600">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <span className="font-medium">Tipo:</span>
-                                    <span>{TIPO_LABELS[complaint.type] || complaint.type}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-neutral-600">
-                                    <Calendar className="h-4 w-4" />
-                                    <span className="font-medium">Registrado em:</span>
-                                    <span>{new Date(complaint.createdAt).toLocaleDateString('pt-BR')}</span>
-                                </div>
-                                {complaint.unit && (
-                                    <div className="flex items-center gap-2 text-neutral-600">
-                                        <MapPin className="h-4 w-4" />
-                                        <span className="font-medium">Unidade:</span>
-                                        <span>{complaint.unit}</span>
-                                    </div>
-                                )}
-                                {complaint.sector && (
-                                    <div className="flex items-center gap-2 text-neutral-600">
-                                        <FileText className="h-4 w-4" />
-                                        <span className="font-medium">Setor:</span>
-                                        <span>{complaint.sector}</span>
-                                    </div>
-                                )}
+                            <div className="mt-4 flex justify-end">
+                                <button
+                                    onClick={handleUpdateComplaint}
+                                    disabled={isUpdating}
+                                    className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition disabled:opacity-50"
+                                >
+                                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                    Salvar Alterações
+                                </button>
                             </div>
                         </div>
 
-                        {/* Descrição */}
-                        <div className="bg-white rounded-xl shadow-sm p-6">
-                            <h2 className="text-lg font-semibold text-primary-900 mb-4">Descrição da Ocorrência</h2>
-                            <p className="text-neutral-700 whitespace-pre-wrap">{complaint.description}</p>
+                        {/* Description Card */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-slate-500" />
+                                Relato
+                            </h2>
+                            <div className="prose prose-slate max-w-none bg-slate-50 p-4 rounded-lg border border-slate-100 text-slate-700 whitespace-pre-wrap">
+                                {complaint.description}
+                            </div>
 
-                            {complaint.witnesses && (
-                                <div className="mt-4 pt-4 border-t">
-                                    <h3 className="text-sm font-medium text-neutral-600 mb-2">Testemunhas:</h3>
-                                    <p className="text-neutral-700">{complaint.witnesses}</p>
+                            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-6 pt-6 border-t border-slate-100">
+                                <div className="space-y-3">
+                                    <div className="flex items-start gap-3">
+                                        <Calendar className="h-4 w-4 text-slate-400 mt-0.5" />
+                                        <div>
+                                            <p className="font-medium text-slate-900">Data do Ocorrido</p>
+                                            <p className="text-slate-600">
+                                                {complaint.occurrenceDate
+                                                    ? new Date(complaint.occurrenceDate).toLocaleDateString('pt-BR')
+                                                    : 'Não informada'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <MapPin className="h-4 w-4 text-slate-400 mt-0.5" />
+                                        <div>
+                                            <p className="font-medium text-slate-900">Localização</p>
+                                            <p className="text-slate-600">
+                                                {[complaint.unit, complaint.sector].filter(Boolean).join(' - ') || 'Não informada'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="flex items-start gap-3">
+                                        <User className="h-4 w-4 text-slate-400 mt-0.5" />
+                                        <div>
+                                            <p className="font-medium text-slate-900">Envolvidos</p>
+                                            <p className="text-slate-600">
+                                                <strong>Acusado:</strong> {complaint.accusedName || 'Não informado'} <br />
+                                                <span className="text-xs">({complaint.accusedPosition || 'Cargo não informado'})</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Attachments */}
+                        {complaint.attachments && complaint.attachments.length > 0 && (
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                    <Download className="h-5 w-5 text-slate-500" />
+                                    Anexos ({complaint.attachments.length})
+                                </h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {complaint.attachments.map((att: any) => (
+                                        <div key={att.id} className="flex items-center p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                                            <FileText className="h-8 w-8 text-primary-500 mr-3" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-slate-900 truncate">{att.filename}</p>
+                                                <p className="text-xs text-slate-500">{(att.size / 1024).toFixed(1)} KB</p>
+                                            </div>
+                                            {/* In a real app, this would be a secure download link */}
+                                            <button className="text-primary-600 hover:text-primary-800 text-sm font-medium px-2">
+                                                Baixar
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right Column: Chat & Reporter Info */}
+                    <div className="space-y-6">
+                        {/* Reporter Info */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <User className="h-5 w-5 text-slate-500" />
+                                Denunciante
+                            </h2>
+                            {complaint.isAnonymous ? (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                                    <p className="font-bold text-slate-700">Anônimo</p>
+                                    <p className="text-xs text-slate-500 mt-1">Identidade protegida</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2 text-sm">
+                                    <p><span className="text-slate-500">Nome:</span> <span className="font-medium">{complaint.reporterName}</span></p>
+                                    <p><span className="text-slate-500">Email:</span> <span className="font-medium">{complaint.reporterEmail || '-'}</span></p>
+                                    <p><span className="text-slate-500">Telefone:</span> <span className="font-medium">{complaint.reporterPhone || '-'}</span></p>
                                 </div>
                             )}
                         </div>
 
-                        {/* Mensagens */}
-                        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                            <div className="p-4 bg-primary-50 border-b border-primary-100">
-                                <h2 className="font-semibold text-primary-900 flex items-center gap-2">
-                                    <MessageCircle className="h-5 w-5" />
-                                    Comunicação com Denunciante
+                        {/* Chat Interface */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col h-[600px]">
+                            <div className="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl">
+                                <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+                                    <MessageCircle className="h-5 w-5 text-primary-600" />
+                                    Chat com Denunciante
                                 </h2>
                             </div>
 
-                            <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
                                 {complaint.messages.length === 0 ? (
-                                    <p className="text-center text-neutral-500 py-8">
-                                        Nenhuma mensagem ainda.
+                                    <p className="text-center text-slate-400 text-sm py-8">
+                                        Nenhuma mensagem trocada.
                                     </p>
                                 ) : (
                                     complaint.messages.map((msg) => (
                                         <div
                                             key={msg.id}
-                                            className={`p-4 rounded-lg ${msg.sender === 'comite'
-                                                ? 'bg-primary-50 border-l-4 border-primary-500 ml-8'
-                                                : 'bg-neutral-50 border-l-4 border-neutral-300 mr-8'
+                                            className={`max-w-[85%] p-3 rounded-xl text-sm ${msg.sender === 'comite'
+                                                    ? 'ml-auto bg-primary-600 text-white rounded-br-none'
+                                                    : 'mr-auto bg-slate-100 text-slate-800 rounded-bl-none'
                                                 }`}
                                         >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-sm font-medium">
-                                                    {msg.sender === 'comite' ? 'Comitê de Ética' : 'Denunciante'}
-                                                </span>
-                                                <span className="text-xs text-neutral-500">
-                                                    {new Date(msg.createdAt).toLocaleDateString('pt-BR', {
-                                                        day: '2-digit',
-                                                        month: '2-digit',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                    })}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-neutral-700">{msg.message}</p>
+                                            <p className="mb-1">{msg.message}</p>
+                                            <p className={`text-[10px] text-right ${msg.sender === 'comite' ? 'text-primary-200' : 'text-slate-400'}`}>
+                                                {new Date(msg.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                                            </p>
                                         </div>
                                     ))
                                 )}
                             </div>
 
-                            {/* Enviar Mensagem */}
-                            <div className="p-4 border-t bg-neutral-50">
+                            <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-xl">
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
-                                        placeholder="Responder ao denunciante..."
-                                        className="input-field text-sm"
-                                        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                                        placeholder="Digite sua resposta..."
+                                        className="flex-1 input-field text-sm"
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                     />
                                     <button
-                                        onClick={sendMessage}
+                                        onClick={handleSendMessage}
                                         disabled={sendingMessage || !newMessage.trim()}
-                                        className="btn-primary px-4"
+                                        className="bg-primary-600 text-white p-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
                                     >
-                                        {sendingMessage ? (
-                                            <Loader2 className="h-5 w-5 animate-spin" />
-                                        ) : (
-                                            <Send className="h-5 w-5" />
-                                        )}
+                                        {sendingMessage ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                                     </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Coluna Lateral */}
-                    <div className="space-y-6">
-                        {/* Alterar Status */}
-                        <div className="bg-white rounded-xl shadow-sm p-6">
-                            <h2 className="text-lg font-semibold text-primary-900 mb-4">Alterar Status</h2>
-                            <div className="space-y-2">
-                                {Object.entries(STATUS_INFO).map(([status, info]) => (
-                                    <button
-                                        key={status}
-                                        onClick={() => updateStatus(status)}
-                                        disabled={updatingStatus || complaint.status === status}
-                                        className={`w-full p-3 rounded-lg text-left flex items-center gap-3 transition ${complaint.status === status
-                                            ? 'bg-primary-100 border-2 border-primary-500'
-                                            : 'bg-neutral-50 hover:bg-neutral-100 border-2 border-transparent'
-                                            } ${updatingStatus ? 'opacity-50' : ''}`}
-                                    >
-                                        <info.icon className="h-5 w-5" />
-                                        <span className="font-medium">{info.label}</span>
-                                        {complaint.status === status && (
-                                            <CheckCircle className="h-4 w-4 text-primary-600 ml-auto" />
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Dados do Denunciado */}
-                        {(complaint.accusedName || complaint.accusedPosition) && (
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-primary-900 mb-4">Denunciado</h2>
-                                <div className="space-y-3 text-sm">
-                                    {complaint.accusedName && (
-                                        <div>
-                                            <p className="text-neutral-500">Nome</p>
-                                            <p className="font-medium">{complaint.accusedName}</p>
-                                        </div>
-                                    )}
-                                    {complaint.accusedPosition && (
-                                        <div>
-                                            <p className="text-neutral-500">Cargo</p>
-                                            <p className="font-medium">{complaint.accusedPosition}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Dados do Denunciante (se identificado) */}
-                        {!complaint.isAnonymous && complaint.reporterName && (
-                            <div className="bg-white rounded-xl shadow-sm p-6">
-                                <h2 className="text-lg font-semibold text-primary-900 mb-4 flex items-center gap-2">
-                                    <User className="h-5 w-5" />
-                                    Denunciante
-                                </h2>
-                                <div className="space-y-3 text-sm">
-                                    <div>
-                                        <p className="text-neutral-500">Nome</p>
-                                        <p className="font-medium">{complaint.reporterName}</p>
-                                    </div>
-                                    {complaint.reporterEmail && (
-                                        <div>
-                                            <p className="text-neutral-500">E-mail</p>
-                                            <p className="font-medium">{complaint.reporterEmail}</p>
-                                        </div>
-                                    )}
-                                    {complaint.reporterPhone && (
-                                        <div>
-                                            <p className="text-neutral-500">Telefone</p>
-                                            <p className="font-medium">{complaint.reporterPhone}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Informações Adicionais */}
-                        <div className="bg-white rounded-xl shadow-sm p-6">
-                            <h2 className="text-lg font-semibold text-primary-900 mb-4">Informações</h2>
-                            <div className="space-y-3 text-sm">
-                                {complaint.shift && (
-                                    <div>
-                                        <p className="text-neutral-500">Turno</p>
-                                        <p className="font-medium">{TURNO_LABELS[complaint.shift] || complaint.shift}</p>
-                                    </div>
-                                )}
-                                {complaint.occurrenceDate && (
-                                    <div>
-                                        <p className="text-neutral-500">Data da Ocorrência</p>
-                                        <p className="font-medium">
-                                            {new Date(complaint.occurrenceDate).toLocaleDateString('pt-BR')}
-                                        </p>
-                                    </div>
-                                )}
-                                <div>
-                                    <p className="text-neutral-500">Última Atualização</p>
-                                    <p className="font-medium">
-                                        {new Date(complaint.updatedAt).toLocaleDateString('pt-BR', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
-                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div >
+            </main>
+        </div>
+    )
+}
+
+export default function ComplaintDetailPage({ params }: { params: Promise<{ protocol: string }> }) {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 text-primary-600 animate-spin" /></div>}>
+            <ComplaintDetail params={params} />
+        </Suspense>
     )
 }

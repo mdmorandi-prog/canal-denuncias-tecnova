@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 import { sendStatusUpdateEmail } from '@/lib/email'
 
-// GET - Buscar denúncia por protocolo
+export const runtime = 'nodejs'
+
+// GET - Obter detalhes da denúncia (Protegido para Comitê)
+// Nota: O endpoint público de tracking é /api/complaints/track
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ protocol: string }> }
 ) {
-    try {
-        const { protocol } = await params
+    const { protocol } = await params
+    const session = await auth()
 
+    if (!session) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    try {
         const complaint = await prisma.complaint.findUnique({
             where: { protocol },
             include: {
@@ -21,57 +30,88 @@ export async function GET(
         })
 
         if (!complaint) {
-            return NextResponse.json(
-                { error: 'Denúncia não encontrada' },
-                { status: 404 }
-            )
+            return NextResponse.json({ error: 'Denúncia não encontrada' }, { status: 404 })
         }
 
         return NextResponse.json(complaint)
     } catch (error) {
-        console.error('Error fetching complaint:', error)
+        console.error('Error fetching complaint details:', error)
         return NextResponse.json(
-            { error: 'Erro ao buscar denúncia' },
+            { error: 'Erro ao buscar detalhes da denúncia' },
             { status: 500 }
         )
     }
 }
 
-// PATCH - Atualizar status da denúncia
+// PATCH - Atualizar status/prioridade (Protegido para Comitê)
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ protocol: string }> }
 ) {
-    try {
-        const { protocol } = await params
-        const body = await request.json()
-        const { status, priority } = body
+    const { protocol } = await params
+    const session = await auth()
 
-        const complaint = await prisma.complaint.update({
-            where: { protocol },
-            data: {
-                ...(status && { status }),
-                ...(priority && { priority }),
-                ...(status === 'arquivada' && { closedAt: new Date() })
-            }
+    if (!session) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    try {
+        const body = await request.json()
+        const { status, priority, assignedTo } = body
+
+        // Verificar se denúncia existe
+        const existingComplaint = await prisma.complaint.findUnique({
+            where: { protocol }
         })
 
-        // Enviar notificação de mudança de status
-        if (status && complaint.reporterEmail) {
-            await sendStatusUpdateEmail(complaint.reporterEmail, protocol, status)
+        if (!existingComplaint) {
+            return NextResponse.json({ error: 'Denúncia não encontrada' }, { status: 404 })
         }
 
-        // Log de auditoria
+        // Prepare update data
+        const updateData: any = { updatedAt: new Date() }
+        if (status) updateData.status = status
+        if (priority) updateData.priority = priority
+        if (assignedTo !== undefined) updateData.assignedTo = assignedTo
+
+        if (status === 'arquivada' || status === 'procedente' || status === 'improcedente') {
+            updateData.closedAt = new Date()
+        }
+
+        // Update
+        const updatedComplaint = await prisma.complaint.update({
+            where: { protocol },
+            data: updateData
+        })
+
+        // Log audit
         await prisma.auditLog.create({
             data: {
-                action: 'alteracao_status',
+                action: 'atualizacao',
                 entityType: 'complaint',
-                entityId: complaint.id,
-                details: JSON.stringify({ newStatus: status, oldStatus: complaint.status })
+                entityId: existingComplaint.id,
+                userId: session.user?.email || 'unknown', // Using email as ID proxy for now
+                details: JSON.stringify({ changes: body }),
             }
         })
 
-        return NextResponse.json(complaint)
+        // Notify whistleblower if status changed and they have email/wantsResponse
+        if (status && status !== existingComplaint.status) {
+            if (existingComplaint.reporterEmail && existingComplaint.wantsResponse) {
+                try {
+                    await sendStatusUpdateEmail(
+                        existingComplaint.reporterEmail,
+                        existingComplaint.protocol,
+                        status
+                    )
+                } catch (emailError) {
+                    console.error('Failed to send status update email:', emailError)
+                }
+            }
+        }
+
+        return NextResponse.json(updatedComplaint)
+
     } catch (error) {
         console.error('Error updating complaint:', error)
         return NextResponse.json(

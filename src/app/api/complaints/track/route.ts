@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-// GET - Buscar denúncia por protocolo (para acompanhamento)
 export async function GET(request: NextRequest) {
+    const searchParams = request.nextUrl.searchParams
+    const protocol = searchParams.get('protocol')
+
+    if (!protocol) {
+        return NextResponse.json({ error: 'Protocolo obrigatório' }, { status: 400 })
+    }
+
     try {
-        const { searchParams } = new URL(request.url)
-        const protocol = searchParams.get('protocol')
-
-        if (!protocol) {
-            return NextResponse.json(
-                { error: 'Protocolo é obrigatório' },
-                { status: 400 }
-            )
-        }
-
         const complaint = await prisma.complaint.findUnique({
             where: { protocol },
             select: {
@@ -25,7 +21,6 @@ export async function GET(request: NextRequest) {
                 createdAt: true,
                 updatedAt: true,
                 messages: {
-                    orderBy: { createdAt: 'asc' },
                     select: {
                         id: true,
                         sender: true,
@@ -33,33 +28,18 @@ export async function GET(request: NextRequest) {
                         createdAt: true,
                         isRead: true,
                     },
-                },
-            },
+                    orderBy: { createdAt: 'asc' }
+                }
+            }
         })
 
         if (!complaint) {
-            return NextResponse.json(
-                { error: 'Denúncia não encontrada. Verifique o protocolo.' },
-                { status: 404 }
-            )
+            return NextResponse.json({ error: 'Denúncia não encontrada' }, { status: 404 })
         }
-
-        // Log de visualização
-        await prisma.auditLog.create({
-            data: {
-                action: 'visualizacao_protocolo',
-                entityType: 'complaint',
-                entityId: complaint.protocol,
-                details: JSON.stringify({ protocol }),
-            },
-        })
 
         return NextResponse.json(complaint)
     } catch (error) {
         console.error('Error tracking complaint:', error)
-        return NextResponse.json(
-            { error: 'Erro ao buscar denúncia' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Erro ao buscar denúncia' }, { status: 500 })
     }
 }

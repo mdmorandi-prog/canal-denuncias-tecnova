@@ -378,6 +378,27 @@ export default function HomePage() {
                 </div>
             </section>
 
+            {/* Disclaimer: Gestão vs Assédio */}
+            <section className="bg-neutral-100 py-12 border-t border-neutral-200">
+                <div className="max-w-4xl mx-auto px-4">
+                    <div className="flex items-center justify-center gap-2 mb-6">
+                        <Scale className="h-6 w-6 text-neutral-600" />
+                        <h2 className="text-xl font-bold text-neutral-800">
+                            Sobre Cobrança de Metas e Gestão
+                        </h2>
+                    </div>
+
+                    <div className="bg-white p-8 rounded-xl shadow-sm border-l-4 border-primary-900 border-y border-r border-neutral-200">
+                        <p className="text-neutral-700 mb-4 leading-relaxed">
+                            O Canal de Denúncias é uma ferramenta para combater desvios de conduta graves. Ressaltamos que o exercício regular da gestão — incluindo a <strong>cobrança por produtividade</strong>, o cumprimento de <strong>horários</strong> e a exigência de <strong>padrões de qualidade</strong> — <strong>não configura assédio moral</strong>.
+                        </p>
+                        <p className="text-neutral-700 leading-relaxed">
+                            O contrato de trabalho confere à empresa o direito de dirigir a prestação de serviços. Denúncias devem focar em situações de abuso de autoridade, constrangimento ilegal ou violação de direitos, e não em insatisfações com o modelo de gestão legítimo.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
             {/* Footer */}
             <footer className="bg-neutral-800 text-neutral-400 py-8">
                 <div className="max-w-6xl mx-auto px-4">

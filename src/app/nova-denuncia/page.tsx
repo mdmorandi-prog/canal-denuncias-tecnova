@@ -87,13 +87,23 @@ function NovaDenunciaContent() {
         setError('')
 
         try {
+            const formDataToSend = new FormData()
+
+            // Append text fields
+            Object.entries(formData).forEach(([key, value]) => {
+                formDataToSend.append(key, String(value))
+            })
+
+            formDataToSend.append('isAnonymous', String(isAnonimo))
+
+            // Append files
+            files.forEach((file) => {
+                formDataToSend.append('files', file)
+            })
+
             const response = await fetch('/api/complaints', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    isAnonymous: isAnonimo,
-                }),
+                body: formDataToSend,
             })
 
             const data = await response.json()

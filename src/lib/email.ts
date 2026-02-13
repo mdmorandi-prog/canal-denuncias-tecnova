@@ -179,3 +179,76 @@ export async function sendStatusUpdateEmail(
         `,
     })
 }
+
+// Notificar sobre nova mensagem no chat
+export async function sendNewMessageNotification(
+    complaint: any,
+    message: any
+): Promise<void> {
+    const isFromCommittee = message.sender === 'comite'
+
+    // Se for do comitê, notifica o denunciante (se tiver email)
+    if (isFromCommittee) {
+        if (!complaint.reporterEmail || !complaint.wantsResponse) return
+
+        await sendEmail({
+            to: complaint.reporterEmail,
+            subject: `Nova mensagem sobre sua denúncia - ${complaint.protocol}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: #1e3a5f; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias HSC</h1>
+                    </div>
+                    <div style="background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px;">
+                        <h2 style="color: #1e3a5f; margin-top: 0;">Nova Mensagem Recebida</h2>
+                        
+                        <p>Você recebeu uma nova mensagem do Comitê de Ética referente à denúncia <strong>${complaint.protocol}</strong>.</p>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #1e3a5f;">
+                            <p style="margin: 0; font-style: italic;">"${message.message}"</p>
+                        </div>
+                        
+                        <p style="color: #666;">Acesse o portal para responder.</p>
+                        
+                        <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/acompanhar?protocolo=${complaint.protocol}" 
+                           style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 6px; margin-top: 10px;">
+                            Ver Mensagem
+                        </a>
+                    </div>
+                </div>
+            `,
+        })
+    }
+    // Se for do denunciante, notifica o comitê
+    else {
+        const comiteEmail = process.env.COMITE_EMAIL || 'comite@hospitalsaocarlos.com.br'
+
+        await sendEmail({
+            to: comiteEmail,
+            subject: `💬 Nova mensagem na denúncia ${complaint.protocol}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: #1e3a5f; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias HSC</h1>
+                    </div>
+                    <div style="background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px;">
+                        <h2 style="color: #1e3a5f; margin-top: 0;">Nova Mensagem do Denunciante</h2>
+                        
+                        <p>Uma nova mensagem foi enviada na denúncia <strong>${complaint.protocol}</strong>.</p>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b;">
+                            <p style="margin: 0; font-style: italic;">"${message.message}"</p>
+                        </div>
+                        
+                        <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/comite/${complaint.protocol}" 
+                           style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 6px; margin-top: 10px;">
+                            Responder
+                        </a>
+                    </div>
+                </div>
+            `,
+        })
+    }
+}

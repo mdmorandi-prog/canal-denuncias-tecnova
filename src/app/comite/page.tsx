@@ -70,6 +70,11 @@ export default function ComitePage() {
         setLoading(true)
         try {
             const response = await fetch('/api/complaints')
+            if (response.status === 401) {
+                // Middleware should handle this, but double check
+                window.location.href = '/comite/login'
+                return
+            }
             const data = await response.json()
             setComplaints(data)
         } catch (error) {
