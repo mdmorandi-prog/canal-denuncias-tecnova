@@ -21,6 +21,8 @@ import {
     Save
 } from 'lucide-react'
 
+import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
+
 // Types
 interface Message {
     id: string
@@ -175,6 +177,7 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
 
     return (
         <div className="min-h-screen bg-slate-50">
+            <AutoLogoutGuard />
             {/* Header */}
             <header className="bg-white border-b sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -356,8 +359,8 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                         <div
                                             key={msg.id}
                                             className={`max-w-[85%] p-3 rounded-xl text-sm ${msg.sender === 'comite'
-                                                    ? 'ml-auto bg-primary-600 text-white rounded-br-none'
-                                                    : 'mr-auto bg-slate-100 text-slate-800 rounded-bl-none'
+                                                ? 'ml-auto bg-primary-600 text-white rounded-br-none'
+                                                : 'mr-auto bg-slate-100 text-slate-800 rounded-bl-none'
                                                 }`}
                                         >
                                             <p className="mb-1">{msg.message}</p>

@@ -129,3 +129,14 @@ model EmailConfig {
   updatedAt   DateTime  @updatedAt
   updatedBy   String?   // ID do usuário que atualizou
 }
+
+// ==================== TOKENS DE SEGURANÇA ====================
+
+model TwoFactorToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String
+  expires DateTime
+
+  @@unique([email, token])
+}

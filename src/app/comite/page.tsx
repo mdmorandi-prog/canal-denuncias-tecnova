@@ -31,6 +31,7 @@ interface Complaint {
     unit?: string
     sector?: string
     createdAt: string
+    closedAt?: string
     _count: {
         messages: number
         attachments: number
@@ -60,6 +61,8 @@ const PRIORITY_COLORS: Record<string, string> = {
     alta: 'bg-orange-100 text-orange-600',
     urgente: 'bg-red-100 text-red-600',
 }
+
+import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
 
 export default function ComitePage() {
     const [complaints, setComplaints] = useState<Complaint[]>([])
@@ -101,6 +104,7 @@ export default function ComitePage() {
 
     return (
         <div className="min-h-screen bg-neutral-100">
+            <AutoLogoutGuard />
             {/* Header */}
             <header className="bg-primary-900 text-white py-4">
                 <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
@@ -235,6 +239,7 @@ export default function ComitePage() {
                                 <th className="text-left p-4 text-sm font-medium text-neutral-600">Status</th>
                                 <th className="text-left p-4 text-sm font-medium text-neutral-600">Prioridade</th>
                                 <th className="text-left p-4 text-sm font-medium text-neutral-600">Local</th>
+                                <th className="text-left p-4 text-sm font-medium text-neutral-600">SLA</th>
                                 <th className="text-left p-4 text-sm font-medium text-neutral-600">Data</th>
                                 <th className="text-left p-4 text-sm font-medium text-neutral-600">Msgs</th>
                                 <th className="text-left p-4 text-sm font-medium text-neutral-600">Ações</th>
@@ -243,13 +248,13 @@ export default function ComitePage() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={8} className="p-8 text-center text-neutral-500">
+                                    <td colSpan={9} className="p-8 text-center text-neutral-500">
                                         Carregando...
                                     </td>
                                 </tr>
                             ) : filteredComplaints.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="p-8 text-center text-neutral-500">
+                                    <td colSpan={9} className="p-8 text-center text-neutral-500">
                                         Nenhuma denúncia encontrada.
                                     </td>
                                 </tr>
@@ -285,6 +290,28 @@ export default function ComitePage() {
                                         </td>
                                         <td className="p-4 text-sm text-neutral-600">
                                             {complaint.sector || complaint.unit || '-'}
+                                        </td>
+                                        <td className="p-4">
+                                            {(() => {
+                                                const endDate = complaint.closedAt ? new Date(complaint.closedAt) : new Date();
+                                                const startDate = new Date(complaint.createdAt);
+                                                const diffDays = Math.floor(Math.abs(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+                                                let badgeClass = "bg-green-100 text-green-700";
+                                                if (['procedente', 'improcedente', 'arquivada'].includes(complaint.status)) {
+                                                    badgeClass = "bg-neutral-100 text-neutral-600";
+                                                } else if (diffDays > 15) {
+                                                    badgeClass = "bg-red-100 text-red-700 font-bold";
+                                                } else if (diffDays > 7) {
+                                                    badgeClass = "bg-yellow-100 text-yellow-700";
+                                                }
+
+                                                return (
+                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${badgeClass} inline-block whitespace-nowrap`} title={complaint.closedAt ? `Fechada em ${diffDays} dias` : `Em aberto há ${diffDays} dias`}>
+                                                        {diffDays} {diffDays === 1 ? 'dia' : 'dias'}
+                                                    </span>
+                                                )
+                                            })()}
                                         </td>
                                         <td className="p-4 text-sm text-neutral-600">
                                             {new Date(complaint.createdAt).toLocaleDateString('pt-BR')}

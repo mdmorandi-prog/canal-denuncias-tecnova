@@ -19,6 +19,8 @@ type Member = {
     createdAt: Date
 }
 
+import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
+
 export default function MembrosPage() {
     const router = useRouter()
     const [members, setMembers] = useState<Member[]>([])
@@ -147,6 +149,7 @@ export default function MembrosPage() {
 
     return (
         <div className="min-h-screen bg-neutral-100">
+            <AutoLogoutGuard />
             {/* Header */}
             <header className="bg-primary-900 text-white py-4 shadow-md">
                 <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">

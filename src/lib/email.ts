@@ -252,3 +252,35 @@ export async function sendNewMessageNotification(
         })
     }
 }
+
+// Notificar código 2FA
+export async function send2FATokenEmail(
+    email: string,
+    token: string
+): Promise<void> {
+    await sendEmail({
+        to: email,
+        subject: `Seu código de acesso - Canal de Denúncias HSC`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: #1e3a5f; padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias HSC</h1>
+                </div>
+                <div style="background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px;">
+                    <h2 style="color: #1e3a5f; margin-top: 0;">Código de Verificação (2FA)</h2>
+                    
+                    <p>Você solicitou acesso ao painel do Comitê de Ética. Use o código de 6 dígitos abaixo para concluir o login:</p>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                         <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #1e3a5f;">${token}</span>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">Este código é válido por 10 minutos. Se não foi você, contate o administrador imediatamente.</p>
+                </div>
+                <p style="color: #999; font-size: 12px; margin-top: 20px; text-align: center;">
+                    Hospital São Carlos - Segurança da Informação
+                </p>
+            </div>
+        `,
+    })
+}

@@ -13,10 +13,40 @@ function LoginForm() {
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [code, setCode] = useState('')
+    const [step, setStep] = useState<'credentials' | 'code'>('credentials')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmitCredentials = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        setError('')
+
+        try {
+            const res = await fetch('/api/auth/2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                setError(data.error || 'Erro ao validar credenciais')
+                setLoading(false)
+                return
+            }
+
+            setStep('code')
+        } catch (err) {
+            setError('Erro ao conectar ao servidor')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleSubmitCode = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
         setError('')
@@ -25,17 +55,18 @@ function LoginForm() {
             const result = await signIn('credentials', {
                 email,
                 password,
+                code,
                 redirect: false,
             })
 
             if (result?.error) {
-                setError('E-mail ou senha incorretos')
+                setError('Código incorreto ou expirado')
             } else {
                 router.push(callbackUrl)
                 router.refresh()
             }
         } catch (err) {
-            setError('Erro ao fazer login')
+            setError('Erro ao validar código')
         } finally {
             setLoading(false)
         }
@@ -60,66 +91,128 @@ function LoginForm() {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                            E-mail
-                        </label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="seu@email.com"
-                                className="input-field pl-10"
-                                required
-                            />
+                {step === 'credentials' ? (
+                    <form onSubmit={handleSubmitCredentials} className="space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                E-mail
+                            </label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="seu@email.com"
+                                    className="input-field pl-10"
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                            Senha
-                        </label>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="input-field pl-10"
-                                required
-                            />
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                Senha
+                            </label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="input-field pl-10"
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
-                            <p className="text-sm text-red-800">{error}</p>
-                        </div>
-                    )}
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="btn-primary w-full flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="h-5 w-5 animate-spin" />
-                                Entrando...
-                            </>
-                        ) : (
-                            <>
-                                <Lock className="h-5 w-5" />
-                                Entrar
-                            </>
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                                <p className="text-sm text-red-800">{error}</p>
+                            </div>
                         )}
-                    </button>
-                </form>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="btn-primary w-full flex items-center justify-center gap-2"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    Verificando...
+                                </>
+                            ) : (
+                                <>
+                                    <Lock className="h-5 w-5" />
+                                    Entrar
+                                </>
+                            )}
+                        </button>
+                    </form>
+                ) : (
+                    <form onSubmit={handleSubmitCode} className="space-y-6">
+                        <div className="text-center p-4 bg-primary-50 rounded-lg border border-primary-100 mb-6">
+                            <Mail className="h-8 w-8 text-primary-600 mx-auto mb-2" />
+                            <p className="text-sm text-primary-900">
+                                Enviamos um código de 6 dígitos para o e-mail <strong>{email}</strong>.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-700 mb-2 text-center">
+                                Código de Autenticação (2FA)
+                            </label>
+                            <input
+                                type="text"
+                                value={code}
+                                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                placeholder="000000"
+                                className="input-field text-center text-2xl tracking-widest font-mono py-3"
+                                required
+                                maxLength={6}
+                            />
+                        </div>
+
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                                <p className="text-sm text-red-800">{error}</p>
+                            </div>
+                        )}
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="submit"
+                                disabled={loading || code.length < 6}
+                                className="btn-primary w-full flex items-center justify-center gap-2"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        Validando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock className="h-5 w-5" />
+                                        Acessar Painel
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setStep('credentials')}
+                                disabled={loading}
+                                className="text-sm text-primary-600 hover:text-primary-800 transition"
+                            >
+                                Voltar e tentar novamente
+                            </button>
+                        </div>
+                    </form>
+                )}
 
                 <p className="text-center text-sm text-neutral-500 mt-6">
                     Canal de Denúncias HSC<br />

@@ -12,7 +12,8 @@ export const authConfig: NextAuthConfig = {
             name: "credentials",
             credentials: {
                 email: { label: "E-mail", type: "email" },
-                password: { label: "Senha", type: "password" }
+                password: { label: "Senha", type: "password" },
+                code: { label: "Código", type: "text" }
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) {
@@ -35,6 +36,28 @@ export const authConfig: NextAuthConfig = {
                 if (!passwordMatch) {
                     return null
                 }
+
+                // --------- 2FA Validation ---------
+                if (credentials.code) {
+                    const tokenRecord = await prisma.twoFactorToken.findFirst({
+                        where: { email: user.email }
+                    })
+
+                    // If token doesn't exist, doesn't match, or expired
+                    if (!tokenRecord || tokenRecord.token !== credentials.code || tokenRecord.expires < new Date()) {
+                        return null // Invalid 2FA
+                    }
+
+                    // Delete token after successful use
+                    await prisma.twoFactorToken.delete({
+                        where: { id: tokenRecord.id }
+                    })
+                } else {
+                    // For security, if the code wasn't provided at all but they hit NextAuth, reject.
+                    // Only the custom API handles generation.
+                    return null
+                }
+                // ----------------------------------
 
                 return {
                     id: user.id,

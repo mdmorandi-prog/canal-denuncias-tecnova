@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { ChevronLeft, Save, Mail, AlertTriangle, CheckCircle2, Server, Lock, User, Key, Globe, LogOut } from 'lucide-react'
+import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
 
 export default function EmailConfigPage() {
     const router = useRouter()
@@ -89,6 +90,7 @@ export default function EmailConfigPage() {
 
     return (
         <div className="min-h-screen bg-neutral-100">
+            <AutoLogoutGuard />
             {/* Header */}
             <header className="bg-primary-900 text-white py-4 shadow-md">
                 <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
