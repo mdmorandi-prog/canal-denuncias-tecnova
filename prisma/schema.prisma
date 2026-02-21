@@ -54,9 +54,25 @@ model Complaint {
   // Relacionamentos
   attachments     ComplaintAttachment[]
   messages        ComplaintMessage[]
+  aiAnalysis      ComplaintAnalysis?
   
   // Responsável pela análise
   assignedTo      String?   // ID do membro do comitê
+}
+
+// ==================== ANÁLISE IA ====================
+
+model ComplaintAnalysis {
+  id          String    @id @default(cuid())
+  complaintId String    @unique
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  
+  sentiment   String    // Positivo, Neutro, Negativo, etc
+  urgency     String    // Baixa, Normal, Alta, Critica
+  summary     String    @db.Text
+  keyEntities String    @db.Text // Stored as JSON string arrays
+  
+  createdAt   DateTime  @default(now())
 }
 
 // ==================== ANEXOS (EVIDÊNCIAS) ====================

@@ -18,7 +18,10 @@ import {
     Calendar,
     MapPin,
     AlertTriangle,
-    Save
+    Save,
+    Sparkles,
+    Tag,
+    Activity
 } from 'lucide-react'
 
 import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
@@ -63,6 +66,12 @@ interface Complaint {
     updatedAt: string
     messages: Message[]
     attachments: Attachment[]
+    aiAnalysis?: {
+        sentiment: string
+        urgency: string
+        summary: string
+        keyEntities: string
+    } | null
 }
 
 const STATUS_OPTIONS = [
@@ -251,6 +260,75 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                     Salvar Alterações
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Análise IA Card */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                                    <Sparkles className="h-5 w-5 text-indigo-500" />
+                                    Análise IA
+                                </h2>
+                                <span className="text-xs font-medium bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-100">
+                                    Experimental
+                                </span>
+                            </div>
+
+                            {complaint.aiAnalysis ? (
+                                <div className="space-y-4">
+                                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                        <p className="text-sm text-slate-700 font-medium mb-1">Resumo Inteligente</p>
+                                        <p className="text-sm text-slate-600">{complaint.aiAnalysis.summary}</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white p-3 rounded-lg border border-slate-100 flex items-center gap-3">
+                                            <div className="bg-blue-50 p-2 rounded-full">
+                                                <Activity className="h-4 w-4 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-slate-500 font-medium">Sentimento</p>
+                                                <p className="text-sm font-semibold text-slate-800">{complaint.aiAnalysis.sentiment}</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-3 rounded-lg border border-slate-100 flex items-center gap-3">
+                                            <div className={`p-2 rounded-full ${complaint.aiAnalysis.urgency.toLowerCase() === 'crítica' || complaint.aiAnalysis.urgency.toLowerCase() === 'alta' ? 'bg-red-50' : 'bg-orange-50'}`}>
+                                                <AlertTriangle className={`h-4 w-4 ${complaint.aiAnalysis.urgency.toLowerCase() === 'crítica' || complaint.aiAnalysis.urgency.toLowerCase() === 'alta' ? 'text-red-600' : 'text-orange-600'}`} />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-slate-500 font-medium">Urgência Estimada</p>
+                                                <p className="text-sm font-semibold text-slate-800">{complaint.aiAnalysis.urgency}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {complaint.aiAnalysis.keyEntities && complaint.aiAnalysis.keyEntities !== '[]' && (
+                                        <div className="pt-2">
+                                            <p className="text-xs text-slate-500 font-medium mb-2 flex items-center gap-1">
+                                                <Tag className="h-3 w-3" /> Entidades Identificadas
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {(() => {
+                                                    try {
+                                                        const entities = JSON.parse(complaint.aiAnalysis.keyEntities);
+                                                        return Array.isArray(entities) ? entities.map((entity, idx) => (
+                                                            <span key={idx} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded-md">
+                                                                {entity}
+                                                            </span>
+                                                        )) : null;
+                                                    } catch (e) {
+                                                        return null;
+                                                    }
+                                                })()}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-6">
+                                    <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mx-auto mb-2" />
+                                    <p className="text-sm text-slate-500">A Inteligência Artificial está processando este relato. Atualize a página em instantes.</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Description Card */}

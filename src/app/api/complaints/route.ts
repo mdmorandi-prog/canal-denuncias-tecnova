@@ -6,6 +6,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomBytes } from 'crypto'
 import { auth } from '@/auth'
+import { analyzeComplaintData, ComplaintInsights } from '@/lib/nexus'
 
 export const runtime = 'nodejs'
 
@@ -145,6 +146,30 @@ export async function POST(request: NextRequest) {
             console.error('Failed to send email notification:', emailError)
             // Continue execution, do not fail the request
         }
+
+        // --- PHASE 4: BACKGROUND AI SENTIMENT ANALYSIS ---
+        // Fire and forget: We don't await this so the user gets their protocol immediately
+        analyzeComplaintData(description).then(async (insights: ComplaintInsights | null) => {
+            if (insights) {
+                try {
+                    await prisma.complaintAnalysis.create({
+                        data: {
+                            complaintId: complaint.id,
+                            sentiment: insights.sentiment,
+                            urgency: insights.urgency,
+                            summary: insights.summary,
+                            keyEntities: insights.keyEntities
+                        }
+                    })
+                    console.log(`✅ AI Analysis saved for complaint ${complaint.id}`)
+                } catch (dbError) {
+                    console.error('❌ Failed to save AI analysis to database:', dbError)
+                }
+            }
+        }).catch((aiError: any) => {
+            console.error('❌ AI Analysis background task failed:', aiError)
+        });
+        // -------------------------------------------------
 
         return NextResponse.json({
             success: true,

@@ -25,7 +25,8 @@ export async function GET(
                 messages: {
                     orderBy: { createdAt: 'asc' }
                 },
-                attachments: true
+                attachments: true,
+                aiAnalysis: true
             }
         })
 
