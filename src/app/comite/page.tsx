@@ -119,6 +119,13 @@ export default function ComitePage() {
                     </div>
                     <div className="flex items-center gap-4">
                         <Link
+                            href="/comite/membros"
+                            className="bg-primary-800 hover:bg-primary-700 text-white p-2 rounded-lg transition"
+                            title="Gerenciar Membros do Comitê"
+                        >
+                            <Users className="h-5 w-5" />
+                        </Link>
+                        <Link
                             href="/comite/configuracoes"
                             className="bg-primary-800 hover:bg-primary-700 text-white p-2 rounded-lg transition"
                             title="Configurações de E-mail"
