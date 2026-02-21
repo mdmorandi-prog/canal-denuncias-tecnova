@@ -35,6 +35,7 @@ async function sendEmail(options: EmailOptions): Promise<boolean> {
         console.log('📧 [EMAIL SIMULADO]')
         console.log('Para:', options.to)
         console.log('Assunto:', options.subject)
+        console.log('Conteúdo:', options.html) // Para exibir o token de 2FA nos logs da Vercel
         console.log('---')
         return true
     }
