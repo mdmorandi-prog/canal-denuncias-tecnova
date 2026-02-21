@@ -27,9 +27,9 @@ export async function getMembers() {
             orderBy: { name: 'asc' }
         })
         return { success: true, data: members }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching members:", error)
-        return { success: false, error: "Falha ao buscar membros" }
+        return { success: false, error: `Falha ao buscar membros: ${error?.message || 'Erro desconhecido'}` }
     }
 }
 

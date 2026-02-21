@@ -192,6 +192,13 @@ export default function MembrosPage() {
                     </div>
                 )}
 
+                {error && !isModalOpen && (
+                    <div className="mb-6 bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-2 border border-red-100 animate-fadeIn">
+                        <AlertTriangle className="h-5 w-5 shrink-0" />
+                        {error}
+                    </div>
+                )}
+
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
