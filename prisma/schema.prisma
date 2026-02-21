@@ -7,9 +7,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./denuncias.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
 
 // ==================== DENÚNCIAS ====================
 

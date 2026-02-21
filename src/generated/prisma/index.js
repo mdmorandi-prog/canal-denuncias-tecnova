@@ -88,6 +88,9 @@ Prisma.NullTypes = {
  * Enums
  */
 exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
+  ReadUncommitted: 'ReadUncommitted',
+  ReadCommitted: 'ReadCommitted',
+  RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
 
@@ -173,6 +176,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
@@ -225,18 +233,17 @@ const config = {
   "datasourceNames": [
     "db"
   ],
-  "activeProvider": "sqlite",
-  "postinstall": false,
+  "activeProvider": "postgresql",
   "inlineDatasources": {
     "db": {
       "url": {
-        "fromEnvVar": null,
-        "value": "file:./denuncias.db"
+        "fromEnvVar": "DATABASE_URL",
+        "value": null
       }
     }
   },
-  "inlineSchema": "// Prisma Schema - Canal de Denúncias HSC\n// Sistema de Canal de Denúncias conforme NR1 e Lei 14.457/22\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"sqlite\"\n  url      = \"file:./denuncias.db\"\n}\n\n// ==================== DENÚNCIAS ====================\n\nmodel Complaint {\n  id       String @id @default(cuid())\n  protocol String @unique // Hash SHA-256 truncado para acompanhamento\n\n  // Tipo de ocorrência\n  type String // assedio_moral, assedio_sexual, corrupcao, seguranca_paciente, outros\n\n  // Localização\n  unit           String? // Unidade hospitalar\n  sector         String? // Setor\n  shift          String? // Turno\n  occurrenceDate DateTime? // Data da ocorrência\n\n  // Denunciado\n  accusedName     String? // Nome do denunciado\n  accusedPosition String? // Cargo do denunciado\n\n  // Detalhes\n  description String // Descrição detalhada\n  witnesses   String? // Testemunhas (JSON array)\n\n  // Denunciante\n  isAnonymous   Boolean @default(true)\n  reporterName  String? // Nome (se identificado)\n  reporterEmail String? // E-mail para contato\n  reporterPhone String? // Telefone para contato\n  wantsResponse Boolean @default(false) // Deseja retorno?\n\n  // Status\n  status   String @default(\"nova\") // nova, em_analise, procedente, improcedente, arquivada\n  priority String @default(\"normal\") // baixa, normal, alta, urgente\n\n  // Datas\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n  closedAt  DateTime?\n\n  // Relacionamentos\n  attachments ComplaintAttachment[]\n  messages    ComplaintMessage[]\n\n  // Responsável pela análise\n  assignedTo String? // ID do membro do comitê\n}\n\n// ==================== ANEXOS (EVIDÊNCIAS) ====================\n\nmodel ComplaintAttachment {\n  id          String    @id @default(cuid())\n  complaintId String\n  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)\n\n  filename String // Nome original do arquivo\n  filepath String // Caminho criptografado no servidor\n  mimetype String // Tipo do arquivo\n  size     Int // Tamanho em bytes\n\n  createdAt DateTime @default(now())\n}\n\n// ==================== MENSAGENS (ACOMPANHAMENTO) ====================\n\nmodel ComplaintMessage {\n  id          String    @id @default(cuid())\n  complaintId String\n  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)\n\n  sender  String // \"denunciante\" ou \"comite\"\n  message String // Conteúdo da mensagem\n  isRead  Boolean @default(false)\n\n  createdAt DateTime @default(now())\n}\n\n// ==================== MEMBROS DO COMITÊ ====================\n\nmodel CommitteeMember {\n  id       String  @id @default(cuid())\n  name     String\n  email    String  @unique\n  password String\n  role     String  @default(\"membro\") // coordenador, membro\n  active   Boolean @default(true)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// ==================== LOG DE AUDITORIA ====================\n\nmodel AuditLog {\n  id         String  @id @default(cuid())\n  action     String // visualizacao, alteracao_status, resposta, etc.\n  entityType String // complaint, message\n  entityId   String\n  userId     String? // Membro do comitê (null se sistema)\n  details    String? // JSON com detalhes\n\n  createdAt DateTime @default(now())\n}\n\n// ==================== CONFIGURAÇÕES DO SISTEMA ====================\n\nmodel EmailConfig {\n  id     String  @id @default(cuid())\n  host   String\n  port   Int\n  secure Boolean @default(false)\n  user   String\n  pass   String // Armazenar criptografado futuramente? Por enquanto plaintext ou base64 simples\n  from   String  @default(\"Canal de Denúncias <no-reply@hospital.com>\")\n\n  updatedAt DateTime @updatedAt\n  updatedBy String? // ID do usuário que atualizou\n}\n",
-  "inlineSchemaHash": "10ae1bd19deddbba852956ff7f4cf4d292454c920e6da1255e6b0611be87019a",
+  "inlineSchema": "// Prisma Schema - Canal de Denúncias HSC\n// Sistema de Canal de Denúncias conforme NR1 e Lei 14.457/22\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\n// ==================== DENÚNCIAS ====================\n\nmodel Complaint {\n  id       String @id @default(cuid())\n  protocol String @unique // Hash SHA-256 truncado para acompanhamento\n\n  // Tipo de ocorrência\n  type String // assedio_moral, assedio_sexual, corrupcao, seguranca_paciente, outros\n\n  // Localização\n  unit           String? // Unidade hospitalar\n  sector         String? // Setor\n  shift          String? // Turno\n  occurrenceDate DateTime? // Data da ocorrência\n\n  // Denunciado\n  accusedName     String? // Nome do denunciado\n  accusedPosition String? // Cargo do denunciado\n\n  // Detalhes\n  description String // Descrição detalhada\n  witnesses   String? // Testemunhas (JSON array)\n\n  // Denunciante\n  isAnonymous   Boolean @default(true)\n  reporterName  String? // Nome (se identificado)\n  reporterEmail String? // E-mail para contato\n  reporterPhone String? // Telefone para contato\n  wantsResponse Boolean @default(false) // Deseja retorno?\n\n  // Status\n  status   String @default(\"nova\") // nova, em_analise, procedente, improcedente, arquivada\n  priority String @default(\"normal\") // baixa, normal, alta, urgente\n\n  // Datas\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n  closedAt  DateTime?\n\n  // Relacionamentos\n  attachments ComplaintAttachment[]\n  messages    ComplaintMessage[]\n\n  // Responsável pela análise\n  assignedTo String? // ID do membro do comitê\n}\n\n// ==================== ANEXOS (EVIDÊNCIAS) ====================\n\nmodel ComplaintAttachment {\n  id          String    @id @default(cuid())\n  complaintId String\n  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)\n\n  filename String // Nome original do arquivo\n  filepath String // Caminho criptografado no servidor\n  mimetype String // Tipo do arquivo\n  size     Int // Tamanho em bytes\n\n  createdAt DateTime @default(now())\n}\n\n// ==================== MENSAGENS (ACOMPANHAMENTO) ====================\n\nmodel ComplaintMessage {\n  id          String    @id @default(cuid())\n  complaintId String\n  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)\n\n  sender  String // \"denunciante\" ou \"comite\"\n  message String // Conteúdo da mensagem\n  isRead  Boolean @default(false)\n\n  createdAt DateTime @default(now())\n}\n\n// ==================== MEMBROS DO COMITÊ ====================\n\nmodel CommitteeMember {\n  id       String  @id @default(cuid())\n  name     String\n  email    String  @unique\n  password String\n  role     String  @default(\"membro\") // coordenador, membro\n  active   Boolean @default(true)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n}\n\n// ==================== LOG DE AUDITORIA ====================\n\nmodel AuditLog {\n  id         String  @id @default(cuid())\n  action     String // visualizacao, alteracao_status, resposta, etc.\n  entityType String // complaint, message\n  entityId   String\n  userId     String? // Membro do comitê (null se sistema)\n  details    String? // JSON com detalhes\n\n  createdAt DateTime @default(now())\n}\n\n// ==================== CONFIGURAÇÕES DO SISTEMA ====================\n\nmodel EmailConfig {\n  id     String  @id @default(cuid())\n  host   String\n  port   Int\n  secure Boolean @default(false)\n  user   String\n  pass   String // Armazenar criptografado futuramente? Por enquanto plaintext ou base64 simples\n  from   String  @default(\"Canal de Denúncias <no-reply@hospital.com>\")\n\n  updatedAt DateTime @updatedAt\n  updatedBy String? // ID do usuário que atualizou\n}\n",
+  "inlineSchemaHash": "c66c7807528e08354cf766a0009e554d3e73112930d4d1ea35c7daf98ba60b92",
   "copyEngine": true
 }
 
