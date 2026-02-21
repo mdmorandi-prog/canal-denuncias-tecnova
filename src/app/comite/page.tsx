@@ -63,6 +63,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
+import { ComplaintsDashboard } from '@/components/dashboard/ComplaintsDashboard'
 
 export default function ComitePage() {
     const [complaints, setComplaints] = useState<Complaint[]>([])
@@ -156,56 +157,8 @@ export default function ComitePage() {
             </header>
 
             <div className="max-w-7xl mx-auto px-4 py-8">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                                <FileText className="h-5 w-5 text-primary-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-primary-900">{stats.total}</p>
-                                <p className="text-sm text-neutral-500">Total</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Clock className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-blue-600">{stats.novas}</p>
-                                <p className="text-sm text-neutral-500">Novas</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-yellow-600">{stats.emAnalise}</p>
-                                <p className="text-sm text-neutral-500">Em Análise</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-green-600">{stats.procedentes}</p>
-                                <p className="text-sm text-neutral-500">Procedentes</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {/* Visual Dashboard Level */}
+                <ComplaintsDashboard />
 
                 {/* Filters */}
                 <div className="bg-white rounded-xl p-4 shadow-sm mb-6">
