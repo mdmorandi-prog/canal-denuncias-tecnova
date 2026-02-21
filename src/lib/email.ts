@@ -138,6 +138,36 @@ export async function sendStatusUpdateEmail(
         arquivada: 'Arquivada',
     }
 
+    const formattedStatus = statusLabels[newStatus] || newStatus
+
+    // Tentar buscar template customizado do BD
+    try {
+        const customTemplate = await prisma.emailTemplate.findUnique({
+            where: { type: 'STATUS_UPDATE' }
+        })
+
+        if (customTemplate && customTemplate.body) {
+            // Substituir variáveis dinâmicas
+            const subject = customTemplate.subject
+                .replace(/\{\{protocol\}\}/g, protocol)
+                .replace(/\{\{status\}\}/g, formattedStatus)
+
+            const body = customTemplate.body
+                .replace(/\{\{protocol\}\}/g, protocol)
+                .replace(/\{\{status\}\}/g, formattedStatus)
+
+            await sendEmail({
+                to: email,
+                subject,
+                html: body,
+            })
+            return // Se enviou com custom template, encerra
+        }
+    } catch (err) {
+        console.error('Falha ao buscar template customizado. Usando fallback.', err)
+    }
+
+    // --- Fallback Original ---
     const statusMessages: Record<string, string> = {
         em_analise: 'Sua denúncia está sendo analisada pelo Comitê de Ética.',
         procedente: 'Após análise, sua denúncia foi considerada procedente e as medidas cabíveis serão tomadas.',
@@ -160,7 +190,7 @@ export async function sendStatusUpdateEmail(
                     
                     <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
                         <p style="margin: 5px 0;"><strong>Protocolo:</strong> ${protocol}</p>
-                        <p style="margin: 5px 0;"><strong>Novo Status:</strong> ${statusLabels[newStatus] || newStatus}</p>
+                        <p style="margin: 5px 0;"><strong>Novo Status:</strong> ${formattedStatus}</p>
                     </div>
                     
                     <p style="color: #666;">${statusMessages[newStatus] || ''}</p>

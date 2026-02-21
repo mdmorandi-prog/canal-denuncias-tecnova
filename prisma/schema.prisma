@@ -140,3 +140,11 @@ model TwoFactorToken {
 
   @@unique([email, token])
 }
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  type      String   @unique // 'RECEIVED', 'STATUS_UPDATE', 'RESOLVED'
+  subject   String
+  body      String   @db.Text
+  updatedAt DateTime @updatedAt
+}
