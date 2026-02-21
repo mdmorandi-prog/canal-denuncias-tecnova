@@ -18,7 +18,8 @@ import {
     Users,
     FileText,
     Settings,
-    LogOut
+    LogOut,
+    BarChart3
 } from 'lucide-react'
 
 interface Complaint {
@@ -63,7 +64,6 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
-import { ComplaintsDashboard } from '@/components/dashboard/ComplaintsDashboard'
 
 export default function ComitePage() {
     const [complaints, setComplaints] = useState<Complaint[]>([])
@@ -124,6 +124,13 @@ export default function ComitePage() {
                     </div>
                     <div className="flex items-center gap-4">
                         <Link
+                            href="/comite/relatorios"
+                            className="bg-primary-800 hover:bg-primary-700 text-white p-2 rounded-lg transition"
+                            title="Dashboards Analíticos"
+                        >
+                            <BarChart3 className="h-5 w-5" />
+                        </Link>
+                        <Link
                             href="/comite/membros"
                             className="bg-primary-800 hover:bg-primary-700 text-white p-2 rounded-lg transition"
                             title="Gerenciar Membros do Comitê"
@@ -157,9 +164,6 @@ export default function ComitePage() {
             </header>
 
             <div className="max-w-7xl mx-auto px-4 py-8">
-                {/* Visual Dashboard Level */}
-                <ComplaintsDashboard />
-
                 {/* Filters */}
                 <div className="bg-white rounded-xl p-4 shadow-sm mb-6">
                     <div className="flex items-center gap-4">
