@@ -19,6 +19,12 @@ interface ComplaintContext {
     type?: string;
     sector?: string;
     accusedPosition?: string;
+    actions?: {
+        actionType: string;
+        authorName: string;
+        description: string;
+        createdAt: Date | string;
+    }[];
 }
 
 // ============================================================
@@ -102,9 +108,26 @@ RELATO DA DENÚNCIA (verbatim, confidental):
 ${ctx.description}
 """
 
+${ctx.actions && ctx.actions.length > 0 ? `
 ---
 
-TAREFA: Realize a análise estruturada abaixo. Use somente as informações do relato e da BASE LEGAL acima.
+HISTÓRICO DE AÇÕES JÁ TOMADAS PELO COMITÊ (em ordem cronológica):
+${ctx.actions.map((a, i) => {
+        const typeLabel: Record<string, string> = {
+            entrevista: 'Entrevista', documento: 'Documento coletado',
+            cautelar: 'Medida cautelar', notificacao: 'Notificação enviada',
+            reuniao: 'Reunião do comitê', juridico: 'Consulta jurídica', outro: 'Outro',
+        };
+        const date = new Date(a.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        return `${i + 1}. [${date}] ${typeLabel[a.actionType] || a.actionType} por ${a.authorName}: ${a.description}`;
+    }).join('\n')}
+
+INSTRUÇÃO IMPORTANTE: O comitê JÁ REALIZOU as ações acima. NÃO as repita no campo "recommendedActions". Foque SOMENTE nas próximas etapas necessárias para avançar a investigação a partir do ponto atual. Reavalie o "riskLevel" considerando as medidas já adotadas.
+` : ''}
+
+---
+
+TAREFA: Realize a análise estruturada abaixo. Use somente as informações do relato, do histórico de ações (se houver) e da BASE LEGAL acima.
 
 Responda ESTRITAMENTE em formato JSON com as seguintes chaves:
 

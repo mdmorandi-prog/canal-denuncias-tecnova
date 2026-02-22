@@ -18,7 +18,7 @@ export async function POST(
     const { protocol } = await params
 
     try {
-        // Fetch the complaint with all context
+        // Fetch the complaint with all context + investigation diary actions
         const complaint = await prisma.complaint.findUnique({
             where: { protocol },
             select: {
@@ -27,6 +27,10 @@ export async function POST(
                 type: true,
                 sector: true,
                 accusedPosition: true,
+                actions: {
+                    orderBy: { createdAt: 'asc' },
+                    select: { actionType: true, authorName: true, description: true, createdAt: true }
+                }
             }
         })
 
@@ -34,12 +38,13 @@ export async function POST(
             return NextResponse.json({ error: 'Denúncia não encontrada' }, { status: 404 })
         }
 
-        // Run the new AuditorIA v2 analysis with full context
+        // Run AuditorIA v2 with full complaint context + diary action history
         const insights = await analyzeComplaintData({
             description: complaint.description,
             type: complaint.type,
             sector: complaint.sector ?? undefined,
             accusedPosition: complaint.accusedPosition ?? undefined,
+            actions: complaint.actions,  // Investigation diary history
         })
 
         if (!insights) {
