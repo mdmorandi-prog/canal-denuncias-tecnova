@@ -148,8 +148,10 @@ export async function POST(request: NextRequest) {
         }
 
         // --- PHASE 4: BACKGROUND AI SENTIMENT ANALYSIS ---
-        // Fire and forget: We don't await this so the user gets their protocol immediately
-        analyzeComplaintData(description).then(async (insights: ComplaintInsights | null) => {
+        // --- PHASE 4: AI SENTIMENT ANALYSIS ---
+        // On Vercel (Serverless), we must await this, otherwise the container freezes the background promise
+        try {
+            const insights = await analyzeComplaintData(description);
             const dataToSave = insights || {
                 sentiment: "Indisponível",
                 urgency: "Normal",
@@ -157,33 +159,33 @@ export async function POST(request: NextRequest) {
                 keyEntities: "[]"
             };
 
+            await prisma.complaintAnalysis.create({
+                data: {
+                    complaintId: complaint.id,
+                    sentiment: dataToSave.sentiment,
+                    urgency: dataToSave.urgency,
+                    summary: dataToSave.summary,
+                    keyEntities: dataToSave.keyEntities
+                }
+            });
+            console.log(`✅ AI Analysis saved for complaint ${complaint.id}`);
+        } catch (aiError) {
+            console.error('❌ AI Analysis task failed:', aiError);
+            // Tentar salvar o erro
             try {
                 await prisma.complaintAnalysis.create({
                     data: {
                         complaintId: complaint.id,
-                        sentiment: dataToSave.sentiment,
-                        urgency: dataToSave.urgency,
-                        summary: dataToSave.summary,
-                        keyEntities: dataToSave.keyEntities
+                        sentiment: "Erro",
+                        urgency: "Normal",
+                        summary: "Falha intermitente na comunicação com o servidor Gemini.",
+                        keyEntities: "[]"
                     }
-                })
-                console.log(`✅ AI Analysis saved for complaint ${complaint.id}`)
-            } catch (dbError) {
-                console.error('❌ Failed to save AI analysis to database:', dbError)
+                });
+            } catch (fallbackError) {
+                console.error('Failed to save fallback AI error', fallbackError);
             }
-        }).catch((aiError: any) => {
-            console.error('❌ AI Analysis background task failed:', aiError)
-            // Tentar salvar o erro
-            prisma.complaintAnalysis.create({
-                data: {
-                    complaintId: complaint.id,
-                    sentiment: "Erro",
-                    urgency: "Normal",
-                    summary: "Falha intermitente na comunicação com o servidor Gemini.",
-                    keyEntities: "[]"
-                }
-            }).catch(() => { })
-        });
+        }
         // -------------------------------------------------
 
         return NextResponse.json({
