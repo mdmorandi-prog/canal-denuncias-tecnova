@@ -71,6 +71,9 @@ interface Complaint {
         urgency: string
         summary: string
         keyEntities: string
+        riskLevel?: string | null
+        recommendedActions?: string | null
+        legalFramework?: string | null
     } | null
 }
 
@@ -268,79 +271,128 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                         </div>
 
                         {/* Análise IA Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                                    <Sparkles className="h-5 w-5 text-indigo-500" />
-                                    Análise IA
-                                </h2>
-                                <span className="text-xs font-medium bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-100">
-                                    Experimental
-                                </span>
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                            {/* Card Header */}
+                            <div className="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-4 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Sparkles className="h-5 w-5 text-white" />
+                                    <h2 className="text-base font-semibold text-white">Nexus IA</h2>
+                                    <span className="text-xs bg-white/20 text-white/90 px-2 py-0.5 rounded-full">v2.0</span>
+                                </div>
+                                <span className="text-xs text-white/70">Análise Automatizada de Compliance</span>
                             </div>
 
-                            {complaint.aiAnalysis ? (
-                                <div className="space-y-4">
-                                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                        <p className="text-sm text-slate-700 font-medium mb-1">Resumo Inteligente</p>
-                                        <p className="text-sm text-slate-600">{complaint.aiAnalysis.summary}</p>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-white p-3 rounded-lg border border-slate-100 flex items-center gap-3">
-                                            <div className="bg-blue-50 p-2 rounded-full">
-                                                <Activity className="h-4 w-4 text-blue-600" />
+                            <div className="p-6">
+                                {complaint.aiAnalysis ? (() => {
+                                    // Parse all JSON arrays
+                                    let entities: string[] = []
+                                    let actions: string[] = []
+                                    let laws: string[] = []
+                                    try { entities = JSON.parse(complaint.aiAnalysis.keyEntities || '[]') } catch { }
+                                    try { actions = JSON.parse(complaint.aiAnalysis.recommendedActions || '[]') } catch { }
+                                    try { laws = JSON.parse(complaint.aiAnalysis.legalFramework || '[]') } catch { }
+
+                                    const riskConfig: Record<string, { bg: string; text: string; border: string }> = {
+                                        'Baixo': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+                                        'Moderado': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+                                        'Alto': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+                                        'Crítico': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+                                    }
+                                    const riskLevel = complaint.aiAnalysis.riskLevel || 'Moderado'
+                                    const riskStyle = riskConfig[riskLevel] || riskConfig['Moderado']
+
+                                    const urgencyHigh = ['alta', 'crítica'].includes(complaint.aiAnalysis.urgency.toLowerCase())
+
+                                    return (
+                                        <div className="space-y-5">
+                                            {/* Summary */}
+                                            <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg">
+                                                <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Resumo Executivo</p>
+                                                <p className="text-sm text-slate-700 leading-relaxed">{complaint.aiAnalysis.summary}</p>
                                             </div>
-                                            <div>
-                                                <p className="text-xs text-slate-500 font-medium">Sentimento</p>
-                                                <p className="text-sm font-semibold text-slate-800">{complaint.aiAnalysis.sentiment}</p>
+
+                                            {/* Metrics Grid */}
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
+                                                    <p className="text-xs text-slate-500 font-medium mb-1">Sentimento</p>
+                                                    <p className="text-sm font-bold text-slate-800">{complaint.aiAnalysis.sentiment}</p>
+                                                </div>
+                                                <div className={`p-3 rounded-lg border text-center ${urgencyHigh ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                                                    <p className={`text-xs font-medium mb-1 ${urgencyHigh ? 'text-red-500' : 'text-amber-600'}`}>Urgência</p>
+                                                    <p className={`text-sm font-bold ${urgencyHigh ? 'text-red-800' : 'text-amber-800'}`}>{complaint.aiAnalysis.urgency}</p>
+                                                </div>
+                                                <div className={`p-3 rounded-lg border text-center ${riskStyle.bg} ${riskStyle.border}`}>
+                                                    <p className={`text-xs font-medium mb-1 ${riskStyle.text}`}>Risco Legal</p>
+                                                    <p className={`text-sm font-bold ${riskStyle.text}`}>{riskLevel}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="bg-white p-3 rounded-lg border border-slate-100 flex items-center gap-3">
-                                            <div className={`p-2 rounded-full ${complaint.aiAnalysis.urgency.toLowerCase() === 'crítica' || complaint.aiAnalysis.urgency.toLowerCase() === 'alta' ? 'bg-red-50' : 'bg-orange-50'}`}>
-                                                <AlertTriangle className={`h-4 w-4 ${complaint.aiAnalysis.urgency.toLowerCase() === 'crítica' || complaint.aiAnalysis.urgency.toLowerCase() === 'alta' ? 'text-red-600' : 'text-orange-600'}`} />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-slate-500 font-medium">Urgência Estimada</p>
-                                                <p className="text-sm font-semibold text-slate-800">{complaint.aiAnalysis.urgency}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {complaint.aiAnalysis.keyEntities && complaint.aiAnalysis.keyEntities !== '[]' && (
-                                        <div className="pt-2">
-                                            <p className="text-xs text-slate-500 font-medium mb-2 flex items-center gap-1">
-                                                <Tag className="h-3 w-3" /> Entidades Identificadas
-                                            </p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {(() => {
-                                                    try {
-                                                        const entities = JSON.parse(complaint.aiAnalysis.keyEntities);
-                                                        return Array.isArray(entities) ? entities.map((entity, idx) => (
+
+                                            {/* Recommended Actions */}
+                                            {actions.length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                                        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                                                        Ações Recomendadas pelo Comitê
+                                                    </p>
+                                                    <ol className="space-y-2">
+                                                        {actions.map((action, idx) => (
+                                                            <li key={idx} className="flex items-start gap-2.5 text-sm">
+                                                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center mt-0.5">{idx + 1}</span>
+                                                                <span className="text-slate-700">{action}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ol>
+                                                </div>
+                                            )}
+
+                                            {/* Legal Framework */}
+                                            {laws.length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                                        <FileText className="h-3.5 w-3.5 text-slate-500" />
+                                                        Enquadramento Legal
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {laws.map((law, idx) => (
+                                                            <span key={idx} className="text-xs bg-slate-800 text-slate-100 px-2.5 py-1 rounded-md font-medium">
+                                                                {law}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Key Entities */}
+                                            {entities.length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                                                        <Tag className="h-3 w-3" /> Entidades Identificadas
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {entities.map((entity, idx) => (
                                                             <span key={idx} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded-md">
                                                                 {entity}
                                                             </span>
-                                                        )) : null;
-                                                    } catch (e) {
-                                                        return null;
-                                                    }
-                                                })()}
-                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            ) : new Date().getTime() - new Date(complaint.createdAt).getTime() < 60000 ? (
-                                <div className="text-center py-6">
-                                    <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mx-auto mb-2" />
-                                    <p className="text-sm text-slate-500">A Inteligência Artificial está processando este relato. Atualize a página em instantes.</p>
-                                </div>
-                            ) : (
-                                <div className="text-center py-2">
-                                    <p className="text-sm text-slate-500 flex items-center justify-center gap-2">
-                                        <AlertTriangle className="h-4 w-4 text-orange-400" />
-                                        Análise estrutural não disponível para este relato.
-                                    </p>
-                                </div>
-                            )}
+                                    )
+                                })() : new Date().getTime() - new Date(complaint.createdAt).getTime() < 60000 ? (
+                                    <div className="text-center py-6">
+                                        <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mx-auto mb-2" />
+                                        <p className="text-sm text-slate-500">A Inteligência Artificial está processando este relato. Atualize a página em instantes.</p>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-2">
+                                        <p className="text-sm text-slate-500 flex items-center justify-center gap-2">
+                                            <AlertTriangle className="h-4 w-4 text-orange-400" />
+                                            Análise estrutural não disponível para este relato.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Description Card */}

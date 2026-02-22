@@ -147,16 +147,23 @@ export async function POST(request: NextRequest) {
             // Continue execution, do not fail the request
         }
 
-        // --- PHASE 4: BACKGROUND AI SENTIMENT ANALYSIS ---
-        // --- PHASE 4: AI SENTIMENT ANALYSIS ---
-        // On Vercel (Serverless), we must await this, otherwise the container freezes the background promise
+        // --- PHASE 4: AI SENTIMENT ANALYSIS (Nexus IA v2) ---
         try {
-            const insights = await analyzeComplaintData(description);
+            const insights = await analyzeComplaintData({
+                description,
+                type,
+                sector: sector ?? undefined,
+                accusedPosition: accusedPosition ?? undefined,
+            });
+
             const dataToSave = insights || {
                 sentiment: "Indisponível",
                 urgency: "Normal",
+                riskLevel: "Moderado",
                 summary: "A IA não pôde processar este relato. Verifique se a chave de API (GEMINI_API_KEY) está configurada corretamente no servidor corporativo.",
-                keyEntities: "[]"
+                keyEntities: "[]",
+                recommendedActions: "[]",
+                legalFramework: "[]",
             };
 
             await prisma.complaintAnalysis.create({
@@ -165,13 +172,15 @@ export async function POST(request: NextRequest) {
                     sentiment: dataToSave.sentiment,
                     urgency: dataToSave.urgency,
                     summary: dataToSave.summary,
-                    keyEntities: dataToSave.keyEntities
+                    keyEntities: dataToSave.keyEntities,
+                    riskLevel: dataToSave.riskLevel,
+                    recommendedActions: dataToSave.recommendedActions,
+                    legalFramework: dataToSave.legalFramework,
                 }
             });
-            console.log(`✅ AI Analysis saved for complaint ${complaint.id}`);
+            console.log(`✅ AI Analysis v2 saved for complaint ${complaint.id}`);
         } catch (aiError) {
             console.error('❌ AI Analysis task failed:', aiError);
-            // Tentar salvar o erro
             try {
                 await prisma.complaintAnalysis.create({
                     data: {
@@ -179,7 +188,10 @@ export async function POST(request: NextRequest) {
                         sentiment: "Erro",
                         urgency: "Normal",
                         summary: "Falha intermitente na comunicação com o servidor Gemini.",
-                        keyEntities: "[]"
+                        keyEntities: "[]",
+                        riskLevel: "Moderado",
+                        recommendedActions: "[]",
+                        legalFramework: "[]",
                     }
                 });
             } catch (fallbackError) {

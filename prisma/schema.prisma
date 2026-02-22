@@ -71,6 +71,11 @@ model ComplaintAnalysis {
   urgency     String    // Baixa, Normal, Alta, Critica
   summary     String    @db.Text
   keyEntities String    @db.Text // Stored as JSON string arrays
+
+  // Campos expandidos (Nexus IA v2)
+  riskLevel           String?   // Baixo, Moderado, Alto, Crítico
+  recommendedActions  String?   @db.Text // JSON array of recommended steps
+  legalFramework      String?   @db.Text // JSON array of relevant laws
   
   createdAt   DateTime  @default(now())
 }
