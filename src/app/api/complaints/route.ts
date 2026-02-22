@@ -150,24 +150,39 @@ export async function POST(request: NextRequest) {
         // --- PHASE 4: BACKGROUND AI SENTIMENT ANALYSIS ---
         // Fire and forget: We don't await this so the user gets their protocol immediately
         analyzeComplaintData(description).then(async (insights: ComplaintInsights | null) => {
-            if (insights) {
-                try {
-                    await prisma.complaintAnalysis.create({
-                        data: {
-                            complaintId: complaint.id,
-                            sentiment: insights.sentiment,
-                            urgency: insights.urgency,
-                            summary: insights.summary,
-                            keyEntities: insights.keyEntities
-                        }
-                    })
-                    console.log(`✅ AI Analysis saved for complaint ${complaint.id}`)
-                } catch (dbError) {
-                    console.error('❌ Failed to save AI analysis to database:', dbError)
-                }
+            const dataToSave = insights || {
+                sentiment: "Indisponível",
+                urgency: "Normal",
+                summary: "A IA não pôde processar este relato. Verifique se a chave de API (GEMINI_API_KEY) está configurada corretamente no servidor corporativo.",
+                keyEntities: "[]"
+            };
+
+            try {
+                await prisma.complaintAnalysis.create({
+                    data: {
+                        complaintId: complaint.id,
+                        sentiment: dataToSave.sentiment,
+                        urgency: dataToSave.urgency,
+                        summary: dataToSave.summary,
+                        keyEntities: dataToSave.keyEntities
+                    }
+                })
+                console.log(`✅ AI Analysis saved for complaint ${complaint.id}`)
+            } catch (dbError) {
+                console.error('❌ Failed to save AI analysis to database:', dbError)
             }
         }).catch((aiError: any) => {
             console.error('❌ AI Analysis background task failed:', aiError)
+            // Tentar salvar o erro
+            prisma.complaintAnalysis.create({
+                data: {
+                    complaintId: complaint.id,
+                    sentiment: "Erro",
+                    urgency: "Normal",
+                    summary: "Falha intermitente na comunicação com o servidor Gemini.",
+                    keyEntities: "[]"
+                }
+            }).catch(() => { })
         });
         // -------------------------------------------------
 

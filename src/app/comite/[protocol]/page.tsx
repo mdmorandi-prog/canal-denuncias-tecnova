@@ -323,10 +323,17 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                         </div>
                                     )}
                                 </div>
-                            ) : (
+                            ) : new Date().getTime() - new Date(complaint.createdAt).getTime() < 60000 ? (
                                 <div className="text-center py-6">
                                     <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mx-auto mb-2" />
                                     <p className="text-sm text-slate-500">A Inteligência Artificial está processando este relato. Atualize a página em instantes.</p>
+                                </div>
+                            ) : (
+                                <div className="text-center py-2">
+                                    <p className="text-sm text-slate-500 flex items-center justify-center gap-2">
+                                        <AlertTriangle className="h-4 w-4 text-orange-400" />
+                                        Análise estrutural não disponível para este relato.
+                                    </p>
                                 </div>
                             )}
                         </div>
