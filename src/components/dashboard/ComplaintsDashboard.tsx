@@ -2,9 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import {
-    PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-    BarChart, Bar, XAxis, YAxis, CartesianGrid
-} from 'recharts'
+    Card,
+    DonutChart,
+    BarChart as TremorBarChart,
+    Title,
+    Text,
+    Flex,
+    Metric,
+    Icon,
+    Badge,
+    Grid,
+    ProgressBar,
+    AreaChart,
+} from '@tremor/react'
 import {
     AlertTriangle, CheckCircle, Clock,
     FileText, Activity, Loader2, Calendar
@@ -204,87 +214,64 @@ export function ComplaintsDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {/* Type Distribution */}
-                <div className="bg-white p-6 rounded-xl ring-1 ring-slate-900/5 shadow-sm">
-                    <h3 className="text-base font-semibold text-slate-900 text-balance mb-6">Denúncias por Categoria</h3>
-                    <div className="h-[300px]">
-                        {data.typeData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={data.typeData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={100}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {data.typeData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        formatter={(value: any) => [`${value} denúncia(s)`, 'Quantidade']}
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    />
-                                    <Legend verticalAlign="bottom" height={36} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-slate-400">Sem dados no período</div>
-                        )}
-                    </div>
-                </div>
+                <Card className="ring-1 ring-slate-900/5 shadow-sm">
+                    <Title className="text-slate-900">Denúncias por Categoria</Title>
+                    <Text className="mb-6">Distribuição total de relatos por tipo</Text>
+                    {data.typeData.length > 0 ? (
+                        <DonutChart
+                            className="h-72 mt-4"
+                            data={data.typeData}
+                            category="value"
+                            index="name"
+                            colors={['slate', 'blue', 'indigo', 'cyan', 'sky', 'gray']}
+                            showAnimation={true}
+                            valueFormatter={(number: number) => `${number} relatos`}
+                        />
+                    ) : (
+                        <div className="flex items-center justify-center h-72 text-slate-400">Sem dados no período</div>
+                    )}
+                </Card>
 
                 {/* Sector Distribution */}
-                <div className="bg-white p-6 rounded-xl ring-1 ring-slate-900/5 shadow-sm lg:col-span-2">
-                    <h3 className="text-base font-semibold text-slate-900 text-balance mb-6">Denúncias por Setor</h3>
-                    <div className="h-[300px]">
-                        {data.departmentData && data.departmentData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={data.departmentData} layout="vertical" margin={{ top: 10, right: 30, left: 40, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
-                                    <XAxis type="number" hide />
-                                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} width={120} />
-                                    <Tooltip
-                                        formatter={(value: any) => [`${value} denúncia(s)`, 'Quantidade']}
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                        cursor={{ fill: '#f8fafc' }}
-                                    />
-                                    <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={24} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-slate-400">Sem dados de setor informados</div>
-                        )}
-                    </div>
-                </div>
+                <Card className="ring-1 ring-slate-900/5 shadow-sm lg:col-span-2">
+                    <Title className="text-slate-900">Denúncias por Setor</Title>
+                    <Text className="mb-6">Comparativo de incidentes por área hospitalar</Text>
+                    {data.departmentData && data.departmentData.length > 0 ? (
+                        <TremorBarChart
+                            className="h-80 mt-4"
+                            data={data.departmentData}
+                            index="name"
+                            categories={['value']}
+                            colors={['blue']}
+                            layout="vertical"
+                            showAnimation={true}
+                            valueFormatter={(number: number) => `${number} relatos`}
+                            showLegend={false}
+                        />
+                    ) : (
+                        <div className="flex items-center justify-center h-80 text-slate-400">Sem dados de setor informados</div>
+                    )}
+                </Card>
 
                 {/* Monthly Trend */}
-                <div className="bg-white p-6 rounded-xl ring-1 ring-slate-900/5 shadow-sm">
-                    <h3 className="text-base font-semibold text-slate-900 text-balance mb-6">Acompanhamento Mensal</h3>
-                    <div className="h-[300px]">
-                        {data.monthlyData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={data.monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                                    <Tooltip
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                        cursor={{ fill: '#f8fafc' }}
-                                    />
-                                    <Legend />
-                                    <Bar dataKey="open" name="Em Aberto" stackId="a" fill="#f59e0b" radius={[0, 0, 4, 4]} />
-                                    <Bar dataKey="procedente" name="Procedente" stackId="a" fill="#10b981" />
-                                    <Bar dataKey="improcedente" name="Improcedente" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-slate-400">Sem dados no período</div>
-                        )}
-                    </div>
-                </div>
+                <Card className="ring-1 ring-slate-900/5 shadow-sm">
+                    <Title className="text-slate-900">Acompanhamento Mensal</Title>
+                    <Text className="mb-6">Evolução do status das denúncias ao longo do tempo</Text>
+                    {data.monthlyData.length > 0 ? (
+                        <TremorBarChart
+                            className="h-80 mt-4"
+                            data={data.monthlyData}
+                            index="label"
+                            categories={['open', 'procedente', 'improcedente']}
+                            colors={['amber', 'emerald', 'rose']}
+                            stack={true}
+                            showAnimation={true}
+                            valueFormatter={(number: number) => `${number} casos`}
+                        />
+                    ) : (
+                        <div className="flex items-center justify-center h-80 text-slate-400">Sem dados no período</div>
+                    )}
+                </Card>
 
             </div>
         </div>
