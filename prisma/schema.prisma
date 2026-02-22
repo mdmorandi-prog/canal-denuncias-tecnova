@@ -55,6 +55,7 @@ model Complaint {
   attachments     ComplaintAttachment[]
   messages        ComplaintMessage[]
   aiAnalysis      ComplaintAnalysis?
+  actions         ComplaintAction[]
   
   // Responsável pela análise
   assignedTo      String?   // ID do membro do comitê
@@ -168,4 +169,18 @@ model EmailTemplate {
   subject   String
   body      String   @db.Text
   updatedAt DateTime @updatedAt
+}
+
+// ==================== DIÁRIO DE INVESTIGAÇÃO ====================
+
+model ComplaintAction {
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  authorName  String    // Nome do membro do comitê
+  actionType  String    // entrevista, documento, cautelar, notificacao, reuniao, outro
+  description String    @db.Text
+
+  createdAt   DateTime  @default(now())
 }
