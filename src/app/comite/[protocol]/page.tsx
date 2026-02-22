@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 
 import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
-import { exportComplaintToPDF } from '@/lib/pdf-export'
+import { exportToPDF } from '@/lib/pdf-export'
 
 // Types
 interface Message {
@@ -203,7 +203,12 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                         </span>
                     </div>
                     <button
-                        onClick={() => exportComplaintToPDF(complaint.protocol)}
+                        onClick={() => exportToPDF({
+                            elementId: 'pdf-content',
+                            title: 'Canal de Denúncias HSC - Relatório Confidencial',
+                            filename: `Denuncia_${complaint.protocol}`,
+                            protocol: complaint.protocol
+                        })}
                         className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
                         title="Exportar Denúncia para PDF"
                     >

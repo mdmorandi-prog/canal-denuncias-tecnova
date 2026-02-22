@@ -7,8 +7,9 @@ import {
 } from 'recharts'
 import {
     AlertTriangle, CheckCircle, Clock,
-    FileText, Activity, Loader2, Calendar
+    FileText, Activity, Loader2, Calendar, Download
 } from 'lucide-react'
+import { exportToPDF } from '@/lib/pdf-export'
 
 interface KPIStats {
     total: number
@@ -115,6 +116,14 @@ export function ComplaintsDashboard() {
         fetchData()
     }, [startDate, endDate])
 
+    const handleExportDashboard = async () => {
+        await exportToPDF({
+            elementId: 'pdf-content',
+            title: 'Canal de Denúncias HSC - Relatório Gerencial',
+            filename: `Dashboard_Denuncias_${new Date().toISOString().split('T')[0]}`
+        })
+    }
+
     if (loading && !data) return (
         <div className="flex justify-center items-center p-12 bg-white rounded-xl shadow-sm border border-slate-100">
             <Loader2 className="h-8 w-8 text-primary-600 animate-spin" />
@@ -130,7 +139,7 @@ export function ComplaintsDashboard() {
     if (!data) return null
 
     return (
-        <div className="space-y-8 mb-12">
+        <div id="pdf-content" className="space-y-8 mb-12 bg-white p-4 rounded-2xl">
             {/* Filter Bar */}
             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-wrap items-center justify-between gap-4">
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -163,6 +172,14 @@ export function ComplaintsDashboard() {
                             </button>
                         )}
                     </div>
+
+                    <button
+                        onClick={handleExportDashboard}
+                        className="flex items-center gap-2 bg-primary-900 hover:bg-primary-800 text-white px-4 py-2 rounded-lg font-bold transition shadow-sm"
+                    >
+                        <Download className="h-4 w-4" />
+                        Exportar PDF
+                    </button>
                 </div>
             </div>
 
