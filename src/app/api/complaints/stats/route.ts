@@ -36,6 +36,7 @@ export async function GET(req: Request) {
                 status: true,
                 type: true,
                 priority: true,
+                sector: true,
                 createdAt: true,
                 closedAt: true
             },
@@ -76,6 +77,20 @@ export async function GET(req: Request) {
             value: typeDistribution[key]
         }))
 
+        // Group by Sector
+        const departmentDistribution = complaints.reduce((acc: Record<string, number>, current: any) => {
+            const dep = current.sector || 'Não Informado'
+            acc[dep] = (acc[dep] || 0) + 1
+            return acc
+        }, {} as Record<string, number>)
+
+        const departmentData = Object.keys(departmentDistribution)
+            .map(key => ({
+                name: key,
+                value: departmentDistribution[key]
+            }))
+            .sort((a, b) => b.value - a.value) // Sort by highest count
+
         // Group by Month (for Bar/Line Chart)
         const monthlyDistribution = complaints.reduce((acc: Record<string, any>, current: any) => {
             // format YYYY-MM
@@ -112,6 +127,7 @@ export async function GET(req: Request) {
                 averageSlaClosed
             },
             typeData,
+            departmentData,
             monthlyData
         })
     } catch (error) {

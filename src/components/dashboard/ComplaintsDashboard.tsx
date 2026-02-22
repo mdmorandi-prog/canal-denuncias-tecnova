@@ -35,6 +35,7 @@ interface MonthlyData {
 interface DashboardData {
     kpis: KPIStats
     typeData: TypeData[]
+    departmentData: TypeData[]
     monthlyData: MonthlyData[]
 }
 
@@ -231,6 +232,30 @@ export function ComplaintsDashboard() {
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex items-center justify-center h-full text-slate-400">Sem dados no período</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Sector Distribution */}
+                <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm lg:col-span-2">
+                    <h3 className="text-base font-semibold text-slate-800 mb-6">Denúncias por Setor</h3>
+                    <div className="h-[300px]">
+                        {data.departmentData && data.departmentData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={data.departmentData} layout="vertical" margin={{ top: 10, right: 30, left: 40, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+                                    <XAxis type="number" hide />
+                                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} width={120} />
+                                    <Tooltip
+                                        formatter={(value: any) => [`${value} denúncia(s)`, 'Quantidade']}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        cursor={{ fill: '#f8fafc' }}
+                                    />
+                                    <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={24} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-slate-400">Sem dados de setor informados</div>
                         )}
                     </div>
                 </div>
