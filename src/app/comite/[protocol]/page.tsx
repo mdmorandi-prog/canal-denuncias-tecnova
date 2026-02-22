@@ -295,13 +295,13 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                             <div className="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-4 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Sparkles className="h-5 w-5 text-white" />
-                                    <h2 className="text-base font-semibold text-white">Nexus IA</h2>
+                                    <h2 className="text-base font-semibold text-white">AuditorIA</h2>
                                     <span className="text-xs bg-white/20 text-white/90 px-2 py-0.5 rounded-full">v2.0</span>
                                 </div>
                                 <button
                                     onClick={handleReanalyze}
                                     disabled={isReanalyzing}
-                                    title="Re-analisar denúncia com Nexus IA v2"
+                                    title="Re-analisar denúncia com AuditorIA v2"
                                     className="flex items-center gap-1.5 text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
                                 >
                                     {isReanalyzing

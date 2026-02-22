@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
             // Continue execution, do not fail the request
         }
 
-        // --- PHASE 4: AI SENTIMENT ANALYSIS (Nexus IA v2) ---
+        // --- PHASE 4: AI SENTIMENT ANALYSIS (AuditorIA v2) ---
         try {
             const insights = await analyzeComplaintData({
                 description,

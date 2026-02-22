@@ -5,7 +5,7 @@ import { analyzeComplaintData } from '@/lib/nexus'
 
 export const runtime = 'nodejs'
 
-// POST /api/complaints/[protocol]/analyze - Re-run AI analysis (Nexus IA v2)
+// POST /api/complaints/[protocol]/analyze - Re-run AI analysis (AuditorIA v2)
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ protocol: string }> }
@@ -34,7 +34,7 @@ export async function POST(
             return NextResponse.json({ error: 'Denúncia não encontrada' }, { status: 404 })
         }
 
-        // Run the new Nexus IA v2 analysis with full context
+        // Run the new AuditorIA v2 analysis with full context
         const insights = await analyzeComplaintData({
             description: complaint.description,
             type: complaint.type,

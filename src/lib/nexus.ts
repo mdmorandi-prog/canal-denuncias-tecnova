@@ -67,7 +67,7 @@ INSTRUÇÃO CRÍTICA: Ao preencher o campo "legalFramework", cite SOMENTE as lei
 
 export async function analyzeComplaintData(context: ComplaintContext | string): Promise<ComplaintInsights | null> {
     if (!ai) {
-        console.warn('⚠️ GEMINI_API_KEY is not set. Nexus IA Analysis skipped.');
+        console.warn('⚠️ GEMINI_API_KEY is not set. AuditorIA Analysis skipped.');
         return null;
     }
 
@@ -85,7 +85,7 @@ export async function analyzeComplaintData(context: ComplaintContext | string): 
     };
 
     const prompt = `
-Você é a "Nexus IA v2.0", um sistema especializado em compliance hospitalar, ética médica e direito trabalhista brasileiro.
+Você é a "AuditorIA v2.0", um sistema especializado em compliance hospitalar, ética médica e direito trabalhista brasileiro.
 Sua função é apoiar o Comitê de Ética na triagem, priorização e instrução de denúncias recebidas no canal interno.
 
 ${LEGAL_KNOWLEDGE_BASE}
@@ -163,7 +163,7 @@ Responda ESTRITAMENTE em formato JSON com as seguintes chaves:
         };
 
     } catch (error) {
-        console.error('❌ Failed to analyze complaint with Nexus IA v2:', error);
+        console.error('❌ Failed to analyze complaint with AuditorIA v2:', error);
         return null;
     }
 }
