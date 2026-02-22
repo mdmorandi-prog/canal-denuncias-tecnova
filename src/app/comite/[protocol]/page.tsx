@@ -21,7 +21,8 @@ import {
     Save,
     Sparkles,
     Tag,
-    Activity
+    Activity,
+    RefreshCw
 } from 'lucide-react'
 
 import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
@@ -112,6 +113,7 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
     const [newMessage, setNewMessage] = useState('')
     const [sendingMessage, setSendingMessage] = useState(false)
     const [isUpdating, setIsUpdating] = useState(false)
+    const [isReanalyzing, setIsReanalyzing] = useState(false)
     const [selectedStatus, setSelectedStatus] = useState('')
     const [selectedPriority, setSelectedPriority] = useState('')
 
@@ -137,6 +139,23 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
     useEffect(() => {
         fetchComplaint()
     }, [protocol])
+
+    const handleReanalyze = async () => {
+        setIsReanalyzing(true)
+        try {
+            const res = await fetch(`/api/complaints/${protocol}/analyze`, { method: 'POST' })
+            if (!res.ok) {
+                const err = await res.json()
+                alert(err.error || 'Erro ao re-analisar')
+                return
+            }
+            await fetchComplaint() // Refresh page data with new analysis
+        } catch (err) {
+            alert('Erro de rede ao re-analisar.')
+        } finally {
+            setIsReanalyzing(false)
+        }
+    }
 
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !complaint) return
@@ -279,7 +298,17 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                     <h2 className="text-base font-semibold text-white">Nexus IA</h2>
                                     <span className="text-xs bg-white/20 text-white/90 px-2 py-0.5 rounded-full">v2.0</span>
                                 </div>
-                                <span className="text-xs text-white/70">Análise Automatizada de Compliance</span>
+                                <button
+                                    onClick={handleReanalyze}
+                                    disabled={isReanalyzing}
+                                    title="Re-analisar denúncia com Nexus IA v2"
+                                    className="flex items-center gap-1.5 text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                                >
+                                    {isReanalyzing
+                                        ? <><Loader2 className="h-3 w-3 animate-spin" /> Analisando...</>
+                                        : <><RefreshCw className="h-3 w-3" /> Re-analisar</>
+                                    }
+                                </button>
                             </div>
 
                             <div className="p-6">
