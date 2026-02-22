@@ -3,26 +3,28 @@ import html2canvas from 'html2canvas'
 
 export const exportComplaintToPDF = async (protocol: string) => {
     // 1. Encontrar o elemento principal da página de detalhes
-    const element = document.querySelector('main') as HTMLElement
+    const element = document.getElementById('pdf-content') as HTMLElement
 
     if (!element) return
 
-    // Ocultar botões indesejados no PDF temporariamente
+    // Apply a temporary class to hide buttons during export instead of mutating styles directly
+    element.classList.add('pdf-exporting')
     const buttons = element.querySelectorAll('button')
-    const originalStyles: string[] = []
-
-    buttons.forEach((btn, index) => {
-        originalStyles[index] = btn.style.display
-        btn.style.display = 'none'
+    buttons.forEach((btn) => {
+        btn.setAttribute('data-pdf-hidden', 'true')
+        // Inline style fallback if CSS isn't enough
+        btn.style.visibility = 'hidden'
     })
 
     try {
         // 2. Converter o HTML em um Canvas do tipo Imagem
         const canvas = await html2canvas(element, {
-            scale: 2, // Melhorar qualidade
+            scale: 2,
             useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff'
+            logging: true, // Enable logging for debugging if it fails again
+            backgroundColor: '#ffffff',
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight
         })
 
         // 3. Calcular dimensões para A4
@@ -46,19 +48,21 @@ export const exportComplaintToPDF = async (protocol: string) => {
 
         pdf.line(15, 38, 195, 38) // Linha divisória
 
-        // Calcular se o layout excede uma página
         let heightLeft = imgHeight
         let position = 45 // Posição Y inicial (abaixo do cabeçalho)
+        let pageCount = 1
 
+        // Add the first page image
         pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
         heightLeft -= (pageHeight - position)
 
-        // Adicionar páginas extras se necessário
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight
+        // Add additional pages if the content is longer than one A4 page
+        while (heightLeft > 0 && pageCount < 10) { // Limit to 10 pages to prevent infinite loops
+            position = heightLeft - imgHeight // Calculate the new negative Y offset
             pdf.addPage()
             pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
             heightLeft -= pageHeight
+            pageCount++
         }
 
         // 5. Salvar o documento
@@ -68,9 +72,10 @@ export const exportComplaintToPDF = async (protocol: string) => {
         console.error('Erro ao gerar PDF:', error)
         alert('Erro ao exportar PDF. Tente novamente.')
     } finally {
-        // Restaurar estado original da UI
-        buttons.forEach((btn, index) => {
-            btn.style.display = originalStyles[index]
+        element.classList.remove('pdf-exporting')
+        buttons.forEach((btn) => {
+            btn.removeAttribute('data-pdf-hidden')
+            btn.style.visibility = 'visible'
         })
     }
 }
