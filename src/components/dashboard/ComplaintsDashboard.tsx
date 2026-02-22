@@ -39,7 +39,7 @@ interface DashboardData {
     monthlyData: MonthlyData[]
 }
 
-const COLORS = ['#1e3a5f', '#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6']
+const COLORS = ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8']
 
 const TIPO_LABELS: Record<string, string> = {
     assedio_moral: 'Assédio Moral',
@@ -121,9 +121,9 @@ export function ComplaintsDashboard() {
     return (
         <div className="space-y-6 mb-8">
             {/* Filter Bar */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-primary-600" />
+            <div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-slate-900/5 flex flex-wrap items-center justify-between gap-4">
+                <h2 className="text-lg font-semibold text-slate-900 text-balance flex items-center gap-2">
+                    <Activity className="size-5 text-slate-700" />
                     Métricas Gerais
                 </h2>
 
@@ -156,44 +156,44 @@ export function ComplaintsDashboard() {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="bg-primary-50 p-3 rounded-lg text-primary-600">
-                        <FileText className="h-6 w-6" />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-xl ring-1 ring-slate-900/5 shadow-sm flex items-center gap-4 transition-all hover:shadow-md">
+                    <div className="flex size-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 shadow-sm text-slate-700">
+                        <FileText className="size-5" />
                     </div>
                     <div>
                         <p className="text-sm text-slate-500 font-medium">Total Recebidas</p>
-                        <p className="text-2xl font-bold text-slate-800">{data.kpis.total}</p>
+                        <p className="text-2xl font-bold text-slate-900 tabular-nums tracking-tight">{data.kpis.total}</p>
                     </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="bg-amber-50 p-3 rounded-lg text-amber-600">
-                        <AlertTriangle className="h-6 w-6" />
+                <div className="bg-white p-5 rounded-xl ring-1 ring-slate-900/5 shadow-sm flex items-center gap-4 transition-all hover:shadow-md">
+                    <div className="flex size-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 shadow-sm text-slate-700">
+                        <AlertTriangle className="size-5" />
                     </div>
                     <div>
                         <p className="text-sm text-slate-500 font-medium">Em Aberto</p>
-                        <p className="text-2xl font-bold text-slate-800">{data.kpis.open}</p>
+                        <p className="text-2xl font-bold text-slate-900 tabular-nums tracking-tight">{data.kpis.open}</p>
                     </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="bg-emerald-50 p-3 rounded-lg text-emerald-600">
-                        <CheckCircle className="h-6 w-6" />
+                <div className="bg-white p-5 rounded-xl ring-1 ring-slate-900/5 shadow-sm flex items-center gap-4 transition-all hover:shadow-md">
+                    <div className="flex size-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 shadow-sm text-slate-700">
+                        <CheckCircle className="size-5" />
                     </div>
                     <div>
                         <p className="text-sm text-slate-500 font-medium">Procedentes</p>
-                        <p className="text-2xl font-bold text-slate-800">{data.kpis.procedentes}</p>
+                        <p className="text-2xl font-bold text-slate-900 tabular-nums tracking-tight">{data.kpis.procedentes}</p>
                     </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="bg-slate-50 p-3 rounded-lg text-slate-600">
-                        <Clock className="h-6 w-6" />
+                <div className="bg-white p-5 rounded-xl ring-1 ring-slate-900/5 shadow-sm flex items-center gap-4 transition-all hover:shadow-md">
+                    <div className="flex size-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 shadow-sm text-slate-700">
+                        <Clock className="size-5" />
                     </div>
                     <div>
                         <p className="text-sm text-slate-500 font-medium">SLA Médio (Fechadas)</p>
-                        <p className="text-2xl font-bold text-slate-800">
+                        <p className="text-2xl font-bold text-slate-900 tabular-nums tracking-tight">
                             {data.kpis.averageSlaClosed} <span className="text-sm font-normal text-slate-500">dias</span>
                         </p>
                     </div>
@@ -204,8 +204,8 @@ export function ComplaintsDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {/* Type Distribution */}
-                <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-                    <h3 className="text-base font-semibold text-slate-800 mb-6">Denúncias por Categoria</h3>
+                <div className="bg-white p-6 rounded-xl ring-1 ring-slate-900/5 shadow-sm">
+                    <h3 className="text-base font-semibold text-slate-900 text-balance mb-6">Denúncias por Categoria</h3>
                     <div className="h-[300px]">
                         {data.typeData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
@@ -237,8 +237,8 @@ export function ComplaintsDashboard() {
                 </div>
 
                 {/* Sector Distribution */}
-                <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm lg:col-span-2">
-                    <h3 className="text-base font-semibold text-slate-800 mb-6">Denúncias por Setor</h3>
+                <div className="bg-white p-6 rounded-xl ring-1 ring-slate-900/5 shadow-sm lg:col-span-2">
+                    <h3 className="text-base font-semibold text-slate-900 text-balance mb-6">Denúncias por Setor</h3>
                     <div className="h-[300px]">
                         {data.departmentData && data.departmentData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
@@ -261,8 +261,8 @@ export function ComplaintsDashboard() {
                 </div>
 
                 {/* Monthly Trend */}
-                <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-                    <h3 className="text-base font-semibold text-slate-800 mb-6">Acompanhamento Mensal</h3>
+                <div className="bg-white p-6 rounded-xl ring-1 ring-slate-900/5 shadow-sm">
+                    <h3 className="text-base font-semibold text-slate-900 text-balance mb-6">Acompanhamento Mensal</h3>
                     <div className="h-[300px]">
                         {data.monthlyData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
