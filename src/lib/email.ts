@@ -9,6 +9,14 @@ interface EmailOptions {
 
 import { prisma } from '@/lib/prisma'
 
+function getAppUrl() {
+    if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+    if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL;
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+    return 'http://localhost:3001';
+}
+
 async function getEmailConfig() {
     try {
         const config = await prisma.emailConfig.findFirst({
@@ -110,7 +118,7 @@ export async function sendNewComplaintNotification(
                     
                     <p style="color: #666;">Acesse o painel do comitê para analisar esta denúncia.</p>
                     
-                    <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/comite/${protocol}" 
+                    <a href="${getAppUrl()}/comite/${protocol}" 
                        style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
                               text-decoration: none; border-radius: 6px; margin-top: 10px;">
                         Ver Denúncia
@@ -196,7 +204,7 @@ export async function sendStatusUpdateEmail(
                     
                     <p style="color: #666;">${statusMessages[newStatus] || ''}</p>
                     
-                    <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/acompanhar?protocolo=${protocol}" 
+                    <a href="${getAppUrl()}/acompanhar?protocolo=${protocol}" 
                        style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
                               text-decoration: none; border-radius: 6px; margin-top: 10px;">
                         Acompanhar Denúncia
@@ -241,7 +249,7 @@ export async function sendNewMessageNotification(
                         
                         <p style="color: #666;">Acesse o portal para responder.</p>
                         
-                        <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/acompanhar?protocolo=${complaint.protocol}" 
+                        <a href="${getAppUrl()}/acompanhar?protocolo=${complaint.protocol}" 
                            style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
                                   text-decoration: none; border-radius: 6px; margin-top: 10px;">
                             Ver Mensagem
@@ -272,7 +280,7 @@ export async function sendNewMessageNotification(
                             <p style="margin: 0; font-style: italic;">"${message.message}"</p>
                         </div>
                         
-                        <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/comite/${complaint.protocol}" 
+                        <a href="${getAppUrl()}/comite/${complaint.protocol}" 
                            style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
                                   text-decoration: none; border-radius: 6px; margin-top: 10px;">
                             Responder
