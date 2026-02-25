@@ -11,34 +11,6 @@ type Message = {
     timestamp: Date
 }
 
-const KNOWLEDGE_BASE = [
-    {
-        keywords: ['assedio', 'moral', 'humilhação', 'gritos', 'xingamento', 'ignorar'],
-        response: "Sinto muito que você esteja passando por uma situação difícil ou buscando informações sobre isso. O assédio moral geralmente envolve condutas repetitivas que expõem a pessoa a situações humilhantes ou constrangedoras. Se você está se sentindo desconfortável, saiba que este é um espaço seguro para relatar o que está acontecendo.",
-    },
-    {
-        keywords: ['sexual', 'toque', 'prazer', 'intimo', 'íntimo', 'beijo', 'proposta'],
-        response: "É fundamental que você se sinta seguro(a) em seu ambiente de trabalho. O assédio sexual pode ser definido como qualquer conduta de natureza sexual não desejada. Se você tem dúvidas ou se sentiu invadido(a), estou aqui para explicar e acolher, garantindo seu total sigilo e proteção.",
-    },
-    {
-        keywords: ['anonimo', 'anônimo', 'identidade', 'nome', 'seguro', 'descobrir', 'ip'],
-        response: "Sua tranquilidade é nossa prioridade absoluta. O canal de denúncias oferece a opção 100% anônima, onde nenhuma informação pessoal ou digital (como IP) é registrada. Você pode fazer seu relato com a certeza de que sua identidade estará protegida.",
-    },
-    {
-        keywords: ['corrupção', 'propina', 'dinheiro', 'desvio', 'roubo'],
-        response: "A integridade é um valor essencial. Se você presenciou ou suspeita de atos como desvio de recursos, pagamentos indevidos ou fraudes, seu relato é vital. Garantimos confidencialidade total para que você possa reportar essas situações sem medo.",
-    },
-    {
-        keywords: ['acompanhar', 'ver', 'status', 'resposta', 'protocolo'],
-        response: "Para acompanhar um relato, você precisa do número de protocolo gerado ao final da denúncia. Com ele, basta acessar a opção 'Acompanhar' na tela inicial. Se você perdeu o protocolo de uma denúncia anônima, infelizmente não é possível recuperá-lo por segurança, mas você pode fazer um novo relato.",
-    },
-    {
-        keywords: ['lei', '14457', 'nr1', 'cipa'],
-        response: "A Lei 14.457/22 e a NR-1 reforçam o compromisso das empresas com um ambiente de trabalho seguro e livre de violências, especialmente para mulheres. Este canal é uma das ferramentas para garantir que esses direitos sejam respeitados na prática.",
-    }
-]
-
-const DEFAULT_RESPONSE = "Entendo sua dúvida. Como sou um assistente virtual focado em acolhimento e orientações básicas, talvez eu não tenha essa resposta específica agora. Mas lembre-se: você pode usar o canal para relatar qualquer situação que julgue incorreta ou que te cause desconforto, e o Comitê analisará com todo cuidado."
 
 const WELCOME_MESSAGE = "Olá, eu sou o Carlitos! 💙 Estou aqui para acolher você com segurança, discrição e sem pressão. Se tiver dúvidas sobre os tipos de denúncia, anonimato ou como funciona o processo, pode me perguntar. Como posso ajudar você a se sentir mais tranquilo(a) hoje?"
 
@@ -79,39 +51,63 @@ export function CarlitosAssistant() {
 
         if (!inputValue.trim()) return
 
+        const userMsgText = inputValue;
         const userMessage: Message = {
             id: Date.now().toString(),
-            text: inputValue,
+            text: userMsgText,
             sender: 'user',
             timestamp: new Date()
         }
 
-        setMessages(prev => [...prev, userMessage])
+        const currentMessages = [...messages, userMessage];
+        setMessages(currentMessages)
         setInputValue('')
         setIsTyping(true)
 
-        // Simulate processing delay for natural feel
-        setTimeout(() => {
-            const lowerInput = userMessage.text.toLowerCase()
-            let matchedResponse = DEFAULT_RESPONSE
+        try {
+            const apiMessages = currentMessages
+                .filter(m => m.id !== 'welcome') // Remove strictly the welcome offline prompt if we want, or keep it. Actually let's pass it so AI has context of what it just said.
+                .map(m => ({
+                    role: m.sender === 'user' ? 'user' : 'model',
+                    content: m.text
+                }));
 
-            for (const item of KNOWLEDGE_BASE) {
-                if (item.keywords.some(k => lowerInput.includes(k))) {
-                    matchedResponse = item.response
-                    break
-                }
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: apiMessages })
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch from /api/chat');
+            if (!response.body) throw new Error('No readable stream available');
+
+            setIsTyping(false); // Remove typing dots once stream starts
+
+            const botMessageId = (Date.now() + 1).toString();
+            setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', timestamp: new Date() }]);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunkText = decoder.decode(value);
+                setMessages(prev => prev.map(m =>
+                    m.id === botMessageId ? { ...m, text: m.text + chunkText } : m
+                ));
             }
-
-            const botMessage: Message = {
+        } catch (error) {
+            console.error("Chat API error:", error);
+            setMessages(prev => [...prev, {
                 id: (Date.now() + 1).toString(),
-                text: matchedResponse,
+                text: "Desculpe, estou com alguma instabilidade na minha conexão no momento. Por favor, tente novamente.",
                 sender: 'bot',
                 timestamp: new Date()
-            }
-
-            setMessages(prev => [...prev, botMessage])
-            setIsTyping(false)
-        }, 1500)
+            }]);
+            setIsTyping(false);
+        }
     }
 
     return (
