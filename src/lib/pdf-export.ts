@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 
 interface ExportOptions {
@@ -25,28 +25,30 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
         btn.style.visibility = 'hidden'
     })
 
-    // Nuclear Workaround for html2canvas oklch() support
-    // We override window.getComputedStyle temporarily to sanitize oklch colors
+    // Nuclear Workaround for html2canvas oklch()/oklab() support
+    // We override window.getComputedStyle temporarily to sanitize modern CSS colors
     const originalGetComputedStyle = window.getComputedStyle;
     (window as any).getComputedStyle = (el: Element, pseudoElt?: string | null) => {
         const style = originalGetComputedStyle(el, pseudoElt);
+        if (!style) return style;
+        
         return new Proxy(style, {
-            get(target: any, prop: string) {
-                const value = target[prop];
+            get(target: any, prop: string | symbol) {
+                const value = target[prop as keyof CSSStyleDeclaration];
 
                 // Intercept getPropertyValue which is the most common way to read styles
                 if (prop === 'getPropertyValue') {
                     return (name: string) => {
                         const val = target.getPropertyValue(name);
-                        return (typeof val === 'string' && val.includes('oklch'))
-                            ? val.replace(/oklch\([^)]+\)/g, '#f8fafc')
+                        return (typeof val === 'string' && (val.includes('oklch') || val.includes('oklab')))
+                            ? val.replace(/(oklch|oklab)\([^)]+\)/g, '#f8fafc')
                             : val;
                     };
                 }
 
                 // Intercept direct property access
-                if (typeof value === 'string' && value.includes('oklch')) {
-                    return value.replace(/oklch\([^)]+\)/g, '#f8fafc');
+                if (typeof value === 'string' && (value.includes('oklch') || value.includes('oklab'))) {
+                    return value.replace(/(oklch|oklab)\([^)]+\)/g, '#f8fafc');
                 }
 
                 // Bind methods to the original target
@@ -68,11 +70,9 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
             windowWidth: element.scrollWidth,
             windowHeight: element.scrollHeight,
             onclone: (clonedDoc) => {
-                // Nuclear Workaround for html2canvas oklch() support
-                // html2canvas crashes on ANY oklch() color function.
-                // Since this is a cloned document for export, we can be aggressive.
-
-                const sanitizeValue = (val: string) => val.replace(/oklch\([^)]+\)/g, '#f8fafc');
+                // Secondary fallback for html2canvas modern color functions support
+                // html2canvas crashes on ANY oklch() or oklab() color function.
+                const sanitizeValue = (val: string) => val.replace(/(oklch|oklab)\([^)]+\)/g, '#f8fafc');
 
                 // 1. Process all stylesheets
                 try {
@@ -80,15 +80,12 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
                         try {
                             const rules = Array.from(sheet.cssRules);
                             rules.forEach((rule: any) => {
-                                if (rule.style && rule.style.cssText.includes('oklch')) {
+                                if (rule.style && (rule.style.cssText.includes('oklch') || rule.style.cssText.includes('oklab'))) {
                                     rule.style.cssText = sanitizeValue(rule.style.cssText);
                                 }
                             });
                         } catch (e) {
                             // Cross-origin sheets can't be accessed, but let's try to remove them if they might cause issues
-                            if (sheet.ownerNode && sheet.ownerNode instanceof HTMLElement) {
-                                // sheet.ownerNode.remove(); // Optional: remove if we suspect they carry oklch
-                            }
                         }
                     }
                 } catch (e) { }
@@ -99,22 +96,20 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
                 for (let i = 0; i < allElements.length; i++) {
                     const el = allElements[i] as HTMLElement;
 
-                    // We'll check the most common properties and force them to be non-oklch
-                    // This is more reliable than innerHTML replacement which might break SSR/hydration tags
                     try {
                         const style = window.getComputedStyle(el);
                         const propsToFix = ['color', 'backgroundColor', 'borderColor', 'fill', 'stroke', 'border-top-color', 'border-bottom-color', 'border-left-color', 'border-right-color'];
 
                         propsToFix.forEach(prop => {
                             const value = style.getPropertyValue(prop);
-                            if (value && value.includes('oklch')) {
+                            if (value && (value.includes('oklch') || value.includes('oklab'))) {
                                 el.style.setProperty(prop, '#f8fafc', 'important');
                             }
                         });
 
                         // Fix background images (gradients)
                         const bgImg = style.backgroundImage;
-                        if (bgImg && bgImg.includes('oklch')) {
+                        if (bgImg && (bgImg.includes('oklch') || bgImg.includes('oklab'))) {
                             el.style.setProperty('background-image', sanitizeValue(bgImg), 'important');
                         }
                     } catch (e) { }
@@ -124,7 +119,7 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
                         for (let j = 0; j < el.style.length; j++) {
                             const prop = el.style[j];
                             const val = el.style.getPropertyValue(prop);
-                            if (val && val.includes('oklch')) {
+                            if (val && (val.includes('oklch') || val.includes('oklab'))) {
                                 el.style.setProperty(prop, '#f8fafc', 'important');
                             }
                         }
@@ -179,13 +174,32 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
             pageCount++
         }
 
-        // 5. Salvar o documento
-        pdf.save(`${filename}.pdf`)
+        // 5. Salvar o documento forçando o nome correto e a extensão .pdf
+        try {
+            const blob = pdf.output('blob')
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${filename}.pdf`
+            document.body.appendChild(a)
+            a.click()
+            setTimeout(() => {
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+            }, 100)
+        } catch (saveError) {
+            console.warn('Fallback para pdf.save normal:', saveError)
+            pdf.save(`${filename}.pdf`)
+        }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Erro ao gerar PDF:', error)
-        alert('Erro ao exportar PDF. Tente novamente.')
+        alert('Erro detalhado: ' + (error.message || String(error)) + '\n\nVerifique o console para mais detalhes.')
     } finally {
+        // Just in case it threw inside html2canvas
+        if (window.getComputedStyle !== originalGetComputedStyle) {
+            window.getComputedStyle = originalGetComputedStyle;
+        }
         element.classList.remove('pdf-exporting')
         buttons.forEach((btn) => {
             btn.removeAttribute('data-pdf-hidden')
