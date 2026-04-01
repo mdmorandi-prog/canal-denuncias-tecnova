@@ -61,20 +61,21 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
     };
 
     try {
-        // 2. Converter o HTML em um Canvas do tipo Imagem
-        const canvas = await html2canvas(element, {
+        const cards = Array.from(element.querySelectorAll('.bg-white.rounded-xl')) as HTMLElement[]
+
+        if (cards.length === 0) {
+            throw new Error("No cards found to export in the DOM.");
+        }
+
+        // Shared HTML2Canvas Options
+        const getCanvasOptions = (node: HTMLElement) => ({
             scale: 2,
             useCORS: true,
             logging: false,
             backgroundColor: '#ffffff',
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight,
-            onclone: (clonedDoc) => {
-                // Secondary fallback for html2canvas modern color functions support
-                // html2canvas crashes on ANY oklch() or oklab() color function.
+            windowWidth: 1200, // force desktop width layout for cards if needed, but they are responsive
+            onclone: (clonedDoc: Document) => {
                 const sanitizeValue = (val: string) => val.replace(/(oklch|oklab)\([^)]+\)/g, '#f8fafc');
-
-                // 1. Process all stylesheets
                 try {
                     for (const sheet of Array.from(clonedDoc.styleSheets)) {
                         try {
@@ -84,37 +85,28 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
                                     rule.style.cssText = sanitizeValue(rule.style.cssText);
                                 }
                             });
-                        } catch (e) {
-                            // Cross-origin sheets can't be accessed, but let's try to remove them if they might cause issues
-                        }
+                        } catch (e) {}
                     }
                 } catch (e) { }
 
-                // 2. Process all elements to fix computed styles that html2canvas might read
-                // We'll set inline styles to override anything in CSS that we couldn't reach
                 const allElements = clonedDoc.getElementsByTagName('*');
                 for (let i = 0; i < allElements.length; i++) {
                     const el = allElements[i] as HTMLElement;
-
                     try {
                         const style = window.getComputedStyle(el);
                         const propsToFix = ['color', 'backgroundColor', 'borderColor', 'fill', 'stroke', 'border-top-color', 'border-bottom-color', 'border-left-color', 'border-right-color'];
-
                         propsToFix.forEach(prop => {
                             const value = style.getPropertyValue(prop);
                             if (value && (value.includes('oklch') || value.includes('oklab'))) {
                                 el.style.setProperty(prop, '#f8fafc', 'important');
                             }
                         });
-
-                        // Fix background images (gradients)
                         const bgImg = style.backgroundImage;
                         if (bgImg && (bgImg.includes('oklch') || bgImg.includes('oklab'))) {
                             el.style.setProperty('background-image', sanitizeValue(bgImg), 'important');
                         }
                     } catch (e) { }
 
-                    // Secondary safety: sanitize any inline styles in the cloned document
                     if (el.style) {
                         for (let j = 0; j < el.style.length; j++) {
                             const prop = el.style[j];
@@ -126,53 +118,114 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
                     }
                 }
             }
-        })
+        });
 
-        // Restore original getComputedStyle immediately after canvas generation
-        window.getComputedStyle = originalGetComputedStyle;
-
-        // 3. Calcular dimensões para A4
-        const imgWidth = 210 // mm
-        const pageHeight = 297 // mm
-        const imgHeight = (canvas.height * imgWidth) / canvas.width
-        const imgData = canvas.toDataURL('image/jpeg', 1.0)
-
-        // 4. Instanciar PDF e adicionar a imagem
+        // 3. Instanciar PDF
         const pdf = new jsPDF('p', 'mm', 'a4')
+
+        // Dimensões A4
+        const pageWidth = 210 // mm
+        const pageHeight = 297 // mm
+        const margin = 10
+        const maxPrintableHeight = pageHeight - (margin * 2)
+        const imgWidth = pageWidth - (margin * 2)
 
         // Adicionar cabeçalho corporativo (Logo + Data)
         pdf.setFontSize(16)
         pdf.setTextColor('#1e3a5f')
-        pdf.text(title, 15, 20)
+        pdf.text(title, margin, margin + 10)
 
         pdf.setFontSize(10)
         pdf.setTextColor('#666666')
         if (protocol) {
-            pdf.text(`Protocolo: ${protocol}`, 15, 28)
-            pdf.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 33)
-            pdf.line(15, 38, 195, 38) // Linha divisória
+            pdf.text(`Protocolo: ${protocol}`, margin, margin + 18)
+            pdf.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, margin + 23)
+            pdf.line(margin, margin + 28, pageWidth - margin, margin + 28) // Linha divisória
         } else {
-            pdf.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 15, 28)
-            pdf.line(15, 33, 195, 33) // Linha divisória
+            pdf.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, margin + 18)
+            pdf.line(margin, margin + 23, pageWidth - margin, margin + 23)
         }
 
-        const startY = protocol ? 45 : 40
-        let heightLeft = imgHeight
-        let position = startY
-        let pageCount = 1
+        let currentY = protocol ? margin + 35 : margin + 30
 
-        // Add the first page image
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
-        heightLeft -= (pageHeight - position)
+        // Process each card sequentially to avoid text cutting!
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i]
+            
+            // Expand scroll height for export if it's the chat interface to capture all messages
+            let originalHeight = '';
+            let originalOverflow = '';
+            if (card.querySelector('.overflow-y-auto')) {
+                const scrollable = card.querySelector('.overflow-y-auto') as HTMLElement;
+                if (scrollable) {
+                    originalHeight = scrollable.style.height;
+                    originalOverflow = scrollable.style.overflowY;
+                    scrollable.style.height = 'auto'; // allow expansion
+                    scrollable.style.overflowY = 'visible';
+                }
+            }
 
-        // Add additional pages if the content is longer than one A4 page
-        while (heightLeft > 0 && pageCount < 10) {
-            position = heightLeft - imgHeight
-            pdf.addPage()
-            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
-            heightLeft -= pageHeight
-            pageCount++
+            const canvas = await html2canvas(card, getCanvasOptions(card))
+            
+            // Revert changes if necessary
+            if (card.querySelector('.overflow-y-auto')) {
+                const scrollable = card.querySelector('.overflow-y-auto') as HTMLElement;
+                if (scrollable) {
+                    scrollable.style.height = originalHeight;
+                    scrollable.style.overflowY = originalOverflow;
+                }
+            }
+
+            const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+            // Check if card fits on remaining page space
+            if (currentY + imgHeight > pageHeight - margin && currentY !== margin) {
+                // Doesn't fit, push to new page
+                pdf.addPage()
+                currentY = margin
+            }
+
+            // Check if card ITSELF is larger than the whole printable page
+            if (imgHeight > maxPrintableHeight) {
+                // Must slice the canvas natively to avoid PDF overlap
+                const sliceHeightPx = Math.floor(canvas.width * (maxPrintableHeight / imgWidth))
+                let currentSliceTopPx = 0
+
+                while (currentSliceTopPx < canvas.height) {
+                    const remainingPixels = canvas.height - currentSliceTopPx
+                    const currentTargetHeightPx = Math.min(sliceHeightPx, remainingPixels)
+
+                    const sliceCanvas = document.createElement('canvas')
+                    sliceCanvas.width = canvas.width
+                    sliceCanvas.height = currentTargetHeightPx
+                    const ctx = sliceCanvas.getContext('2d')
+
+                    ctx?.drawImage(canvas,
+                        0, currentSliceTopPx, canvas.width, currentTargetHeightPx,
+                        0, 0, canvas.width, currentTargetHeightPx
+                    )
+
+                    const sliceImgHeight = (currentTargetHeightPx * imgWidth) / canvas.width
+
+                    // Ensure slice fits on page (usually fits perfectly due to math, except bottom padding)
+                    if (currentY + sliceImgHeight > pageHeight - margin && currentY > margin + 1) { // Adding +1 for floating point safety
+                        pdf.addPage()
+                        currentY = margin
+                    }
+
+                    pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 1.0), 'JPEG', margin, currentY, imgWidth, sliceImgHeight)
+                    currentY += sliceImgHeight + 5 // 5mm margin between next piece/card
+                    currentSliceTopPx += currentTargetHeightPx
+                }
+            } else {
+                // Standard un-sliced add
+                pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', margin, currentY, imgWidth, imgHeight)
+                currentY += imgHeight + 5 // 5mm margin between cards
+            }
         }
+
+        // Restore original getComputedStyle immediately after canvas generation loops
+        window.getComputedStyle = originalGetComputedStyle;
 
         // 5. Salvar o documento forçando o nome correto e a extensão .pdf
         try {
@@ -196,7 +249,7 @@ export const exportToPDF = async ({ elementId, title, filename, protocol }: Expo
         console.error('Erro ao gerar PDF:', error)
         alert('Erro detalhado: ' + (error.message || String(error)) + '\n\nVerifique o console para mais detalhes.')
     } finally {
-        // Just in case it threw inside html2canvas
+        // Just in case it threw
         if (window.getComputedStyle !== originalGetComputedStyle) {
             window.getComputedStyle = originalGetComputedStyle;
         }
