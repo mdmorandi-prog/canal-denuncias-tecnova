@@ -160,33 +160,41 @@ Responda ESTRITAMENTE em formato JSON com as seguintes chaves:
    NÃO invente leis, artigos ou resoluções fora da BASE LEGAL acima.
 `;
 
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                temperature: 0.1, // Very low for consistent, grounded responses
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    temperature: 0.1, // Very low for consistent, grounded responses
+                }
+            });
+
+            const jsonText = response.text;
+            if (!jsonText) throw new Error("Empty response from Gemini API");
+
+            const parsed = JSON.parse(jsonText);
+
+            return {
+                sentiment: parsed.sentiment || "Não detectado",
+                urgency: parsed.urgency || "Normal",
+                riskLevel: parsed.riskLevel || "Moderado",
+                summary: parsed.summary || "Resumo não disponível.",
+                keyEntities: JSON.stringify(parsed.keyEntities || []),
+                recommendedActions: JSON.stringify(parsed.recommendedActions || []),
+                legalFramework: JSON.stringify(parsed.legalFramework || []),
+            };
+
+        } catch (error) {
+            console.error(`❌ AuditorIA v2 attempt ${attempt} failed:`, error instanceof Error ? error.message : error);
+            if (attempt === 3) {
+                throw new Error("Falha intermitente na comunicação com o servidor Gemini.");
             }
-        });
-
-        const jsonText = response.text;
-        if (!jsonText) return null;
-
-        const parsed = JSON.parse(jsonText);
-
-        return {
-            sentiment: parsed.sentiment || "Não detectado",
-            urgency: parsed.urgency || "Normal",
-            riskLevel: parsed.riskLevel || "Moderado",
-            summary: parsed.summary || "Resumo não disponível.",
-            keyEntities: JSON.stringify(parsed.keyEntities || []),
-            recommendedActions: JSON.stringify(parsed.recommendedActions || []),
-            legalFramework: JSON.stringify(parsed.legalFramework || []),
-        };
-
-    } catch (error) {
-        console.error('❌ Failed to analyze complaint with AuditorIA v2:', error);
-        return null;
+            // Wait 2 seconds before retrying
+            await new Promise(res => setTimeout(res, 2000));
+        }
     }
+    
+    return null;
 }
