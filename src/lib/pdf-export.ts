@@ -27,9 +27,9 @@ export const exportToPDF = async ({ elementId, title, filename, protocol, data, 
     return generateDOMCapture(elementId, title, filename)
 }
 
-const GREY = [39, 39, 42] // Zinc-800 (Pure Industrial Grey)
-const EMERALD = [16, 185, 129]
-const SLATE = [100, 116, 139]
+const GREY: [number, number, number] = [39, 39, 42] // Zinc-800 (Pure Industrial Grey)
+const EMERALD: [number, number, number] = [16, 185, 129]
+const SLATE: [number, number, number] = [100, 116, 139]
 
 /**
  * HIGH FIDELITY COMPLAINT REPORT

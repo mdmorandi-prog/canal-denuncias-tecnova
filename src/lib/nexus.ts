@@ -20,6 +20,7 @@ interface ComplaintContext {
     type?: string;
     sector?: string;
     accusedPosition?: string;
+    accusedName?: string;
     actions?: {
         actionType: string;
         authorName: string;
