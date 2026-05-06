@@ -40,7 +40,7 @@ interface Complaint {
 }
 
 const STATUS_INFO: Record<string, { label: string; icon: typeof Clock; color: string }> = {
-    nova: { label: 'Nova', icon: Clock, color: 'bg-blue-100 text-blue-800' },
+    nova: { label: 'Nova', icon: Clock, color: 'bg-slate-100 text-slate-800' },
     em_analise: { label: 'Em Análise', icon: AlertTriangle, color: 'bg-yellow-100 text-yellow-800' },
     procedente: { label: 'Procedente', icon: CheckCircle, color: 'bg-green-100 text-green-800' },
     improcedente: { label: 'Improcedente', icon: XCircle, color: 'bg-red-100 text-red-800' },
@@ -51,14 +51,14 @@ const TIPO_LABELS: Record<string, string> = {
     assedio_moral: 'Assédio Moral',
     assedio_sexual: 'Assédio Sexual',
     corrupcao: 'Corrupção',
-    seguranca_paciente: 'Segurança do Paciente',
+    seguranca_trabalho: 'Segurança do Trabalho',
     violacao_normas: 'Violação de Normas',
     outros: 'Outros',
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
     baixa: 'bg-neutral-100 text-neutral-600',
-    normal: 'bg-blue-100 text-blue-600',
+    normal: 'bg-slate-100 text-slate-600',
     alta: 'bg-orange-100 text-orange-600',
     urgente: 'bg-red-100 text-red-600',
 }
@@ -107,12 +107,12 @@ export default function ComitePage() {
         <div className="min-h-screen bg-neutral-100">
             <AutoLogoutGuard />
             {/* Header */}
-            <header className="bg-primary-900 text-white py-4">
+            <header className="bg-authority text-white py-4">
                 <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Image
-                            src="/logo-hsc.png"
-                            alt="Hospital São Carlos"
+                            src="/logo-tecnova.png"
+                            alt="Tecnova"
                             width={180}
                             height={60}
                             className="h-14 w-auto"
@@ -175,7 +175,7 @@ export default function ComitePage() {
                                     key={f}
                                     onClick={() => setFilter(f)}
                                     className={`px-3 py-1 rounded-full text-sm transition ${filter === f
-                                        ? 'bg-primary-900 text-white'
+                                        ? 'bg-authority text-white'
                                         : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                                         }`}
                                 >

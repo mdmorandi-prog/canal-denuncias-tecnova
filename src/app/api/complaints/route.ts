@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
                 unit,
                 sector,
                 shift,
-                occurrenceDate: occurrenceDateStr ? new Date(occurrenceDateStr) : null,
+                occurrenceDate: (occurrenceDateStr && !isNaN(Date.parse(occurrenceDateStr))) ? new Date(occurrenceDateStr) : null,
                 accusedName,
                 accusedPosition,
                 description,
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Error creating complaint:', error)
         return NextResponse.json(
-            { error: 'Erro ao registrar denúncia' },
+            { error: `Erro ao registrar denúncia: ${error instanceof Error ? error.message : 'Erro desconhecido'}` },
             { status: 500 }
         )
     }
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
 
 // Determinar prioridade baseado no tipo
 function determinePriority(type: string): string {
-    const highPriority = ['assedio_sexual', 'seguranca_paciente']
+    const highPriority = ['assedio_sexual', 'seguranca_trabalho']
     const mediumPriority = ['assedio_moral', 'corrupcao']
 
     if (highPriority.includes(type)) return 'alta'

@@ -11,7 +11,7 @@ function LoginForm() {
     const searchParams = useSearchParams()
     const callbackUrl = searchParams.get('callbackUrl') || '/comite'
 
-    const [email, setEmail] = useState('')
+    const [email, setEmail] = useState('admin@tecnova.ind.br')
     const [password, setPassword] = useState('')
     const [code, setCode] = useState('')
     const [step, setStep] = useState<'credentials' | 'code'>('credentials')
@@ -73,12 +73,12 @@ function LoginForm() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-primary-900 to-primary-800 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-authority flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
                 <div className="text-center mb-8">
                     <Image
-                        src="/logo-hsc.png"
-                        alt="Hospital São Carlos"
+                        src="/logo-tecnova.png"
+                        alt="Tecnova"
                         width={240}
                         height={80}
                         className="mx-auto mb-6 h-20 w-auto"
@@ -103,7 +103,7 @@ function LoginForm() {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="seu@email.com"
+                                    placeholder="admin@tecnova.ind.br"
                                     className="input-field pl-10"
                                     required
                                 />
@@ -215,7 +215,7 @@ function LoginForm() {
                 )}
 
                 <p className="text-center text-sm text-neutral-500 mt-6">
-                    Canal de Denúncias HSC<br />
+                    Canal de Denúncias Tecnova<br />
                     Acesso exclusivo para membros autorizados
                 </p>
             </div>
@@ -226,7 +226,7 @@ function LoginForm() {
 export default function LoginPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-gradient-to-b from-primary-900 to-primary-800 flex items-center justify-center">
+            <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
                 <Loader2 className="h-8 w-8 text-white animate-spin" />
             </div>
         }>

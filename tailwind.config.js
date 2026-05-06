@@ -9,31 +9,31 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                // Paleta NR1: Azul Marinho (Autoridade), Branco (Transparência), Cinza Suave (Neutralidade)
+                // Paleta Tecnova: Verde Lima (#83C120) e Cinza Escuro (#282828)
                 primary: {
-                    50: '#f0f4f8',
-                    100: '#d9e2ec',
-                    200: '#bcccdc',
-                    300: '#9fb3c8',
-                    400: '#829ab1',
-                    500: '#627d98',
-                    600: '#486581',
-                    700: '#334e68',
-                    800: '#243b53',
-                    900: '#102a43', // Azul Marinho principal
-                    950: '#0a1929',
+                    50: '#f4faea',
+                    100: '#e7f4d2',
+                    200: '#cfe9a5',
+                    300: '#b2db71',
+                    400: '#99cd46',
+                    500: '#83C120', // Verde Tecnova principal
+                    600: '#679b18',
+                    700: '#4e7616',
+                    800: '#405e16',
+                    900: '#374f17',
+                    950: '#1b2c08',
                 },
                 neutral: {
-                    50: '#f8fafc',
-                    100: '#f1f5f9',
-                    200: '#e2e8f0',
-                    300: '#cbd5e1',
-                    400: '#94a3b8',
-                    500: '#64748b',
-                    600: '#475569',
-                    700: '#334155',
-                    800: '#1e293b',
-                    900: '#0f172a',
+                    50: '#f6f6f6',
+                    100: '#e7e7e7',
+                    200: '#d1d1d1',
+                    300: '#b0b0b0',
+                    400: '#888888',
+                    500: '#6d6d6d',
+                    600: '#5d5d5d',
+                    700: '#4f4f4f',
+                    800: '#282828', // Cinza Escuro Tecnova principal
+                    900: '#1a1a1a',
                 },
             },
             fontFamily: {

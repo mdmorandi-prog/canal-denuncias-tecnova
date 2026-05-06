@@ -5,17 +5,17 @@
     --font-family-sans: 'Inter', system-ui, sans-serif;
 
     /* Paleta NR1 - Azul Marinho (Autoridade), Branco (Transparência), Cinza (Neutralidade) */
-    --color-primary-50: #f0f4f8;
-    --color-primary-100: #d9e2ec;
-    --color-primary-200: #bcccdc;
-    --color-primary-300: #9fb3c8;
-    --color-primary-400: #829ab1;
-    --color-primary-500: #627d98;
-    --color-primary-600: #486581;
-    --color-primary-700: #334e68;
-    --color-primary-800: #243b53;
-    --color-primary-900: #102a43;
-    --color-primary-950: #0a1929;
+    --color-primary-50: #f4faea;
+    --color-primary-100: #e7f4d2;
+    --color-primary-200: #cfe9a5;
+    --color-primary-300: #b2db71;
+    --color-primary-400: #99cd46;
+    --color-primary-500: #83C120;
+    --color-primary-600: #679b18;
+    --color-primary-700: #4e7616;
+    --color-primary-800: #405e16;
+    --color-primary-900: #374f17;
+    --color-primary-950: #1b2c08;
 
     /* Overrides para evitar OKLCH no html2canvas */
     --color-slate-50: #f8fafc;
@@ -50,17 +50,17 @@ body {
     min-height: 100vh;
 }
 
-/* Paleta NR1 - Azul Marinho (Autoridade), Branco (Transparência), Cinza (Neutralidade) */
+/* Paleta Tecnova - Verde Lima (Primária), Cinza Escuro (Autoridade) */
 .bg-authority {
-    background-color: #102a43;
+    background-color: #282828;
 }
 
 .text-authority {
-    color: #102a43;
+    color: #282828;
 }
 
 .border-authority {
-    border-color: #102a43;
+    border-color: #282828;
 }
 
 /* Card com efeito de vidro */
@@ -71,37 +71,37 @@ body {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
-/* Botão primário NR1 */
+/* Botão primário Tecnova */
 .btn-primary {
-    background-color: #102a43;
-    color: white;
+    background-color: #83C120;
+    color: #282828;
     padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.2s;
 }
 
 .btn-primary:hover {
-    background-color: #243b53;
+    background-color: #99cd46;
 }
 
 .btn-primary:focus {
     outline: none;
-    box-shadow: 0 0 0 2px #627d98, 0 0 0 4px white;
+    box-shadow: 0 0 0 2px #83C120, 0 0 0 4px white;
 }
 
 .btn-secondary {
     background-color: white;
-    color: #102a43;
+    color: #282828;
     padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
     font-weight: 500;
-    border: 2px solid #102a43;
+    border: 2px solid #282828;
     transition: all 0.2s;
 }
 
 .btn-secondary:hover {
-    background-color: #f0f4f8;
+    background-color: #f6f6f6;
 }
 
 /* Inputs */
@@ -132,8 +132,8 @@ body {
 }
 
 .badge-nova {
-    background-color: #dbeafe;
-    color: #1e40af;
+    background-color: #f1f5f9;
+    color: #475569;
 }
 
 .badge-em_analise {
@@ -142,13 +142,13 @@ body {
 }
 
 .badge-procedente {
-    background-color: #dcfce7;
-    color: #166534;
+    background-color: #e7f4d2;
+    color: #4e7616;
 }
 
 .badge-improcedente {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background-color: #e2e8f0;
+    color: #475569;
 }
 
 .badge-arquivada {
@@ -175,7 +175,7 @@ body {
 
 /* Acessibilidade WCAG 2.1 */
 :focus-visible {
-    outline: 2px solid #102a43;
+    outline: 2px solid #83C120;
     outline-offset: 2px;
 }
 
@@ -186,7 +186,7 @@ body {
     top: 0;
     transform: translateY(-100%);
     padding: 1rem;
-    background-color: #102a43;
+    background-color: #282828;
     color: white;
     transition: transform 0.2s;
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Heart, X, Send, MessageCircle, Info } from 'lucide-react'
+import { X, Send, MessageCircle, Info, Cog } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Message = {
@@ -12,9 +12,9 @@ type Message = {
 }
 
 
-const WELCOME_MESSAGE = "Olá, eu sou o Carlitos! 💙 Estou aqui para acolher você com segurança, discrição e sem pressão. Se tiver dúvidas sobre os tipos de denúncia, anonimato ou como funciona o processo, pode me perguntar. Como posso ajudar você a se sentir mais tranquilo(a) hoje?"
+const WELCOME_MESSAGE = "Olá, eu sou o Nova! 💙 Estou aqui para acolher você com segurança, discrição e sem pressão. Se tiver dúvidas sobre os tipos de denúncia, anonimato ou como funciona o processo, pode me perguntar. Como posso ajudar você a se sentir mais tranquilo(a) hoje?"
 
-export function CarlitosAssistant() {
+export function NovaAssistant() {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([])
     const [inputValue, setInputValue] = useState('')
@@ -66,7 +66,7 @@ export function CarlitosAssistant() {
 
         try {
             const apiMessages = currentMessages
-                .filter(m => m.id !== 'welcome') // Remove strictly the welcome offline prompt if we want, or keep it. Actually let's pass it so AI has context of what it just said.
+                .filter(m => m.id !== 'welcome')
                 .map(m => ({
                     role: m.sender === 'user' ? 'user' : 'model',
                     content: m.text
@@ -81,7 +81,7 @@ export function CarlitosAssistant() {
             if (!response.ok) throw new Error('Failed to fetch from /api/chat');
             if (!response.body) throw new Error('No readable stream available');
 
-            setIsTyping(false); // Remove typing dots once stream starts
+            setIsTyping(false);
 
             const botMessageId = (Date.now() + 1).toString();
             setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', timestamp: new Date() }]);
@@ -122,14 +122,14 @@ export function CarlitosAssistant() {
                 {/* Header */}
                 <div className="bg-primary-900 p-4 flex items-center justify-between text-white">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-white/20">
-                            <Heart className="h-6 w-6 text-primary-900 fill-primary-900 animate-pulse" />
+                        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-white/20 shadow-inner">
+                            <Cog className="h-6 w-6 text-primary-900" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-lg leading-tight">Carlitos</h3>
+                            <h3 className="font-bold text-lg leading-tight">Nova</h3>
                             <p className="text-xs text-primary-200 flex items-center gap-1">
                                 <span className="w-2 h-2 bg-green-400 rounded-full block"></span>
-                                Assistente Virtual
+                                Assistente de IA
                             </p>
                         </div>
                     </div>
@@ -154,7 +154,9 @@ export function CarlitosAssistant() {
                             )}
                         >
                             {msg.sender === 'bot' && (
-                                <p className="text-[10px] font-bold text-primary-500 mb-1 uppercase tracking-wider">Carlitos</p>
+                                <p className="text-[10px] font-bold text-primary-500 mb-1 uppercase tracking-wider flex items-center gap-1">
+                                    <Cog className="h-3 w-3" /> NOVA
+                                </p>
                             )}
                             {msg.text}
                             <p className="text-[10px] opacity-50 mt-1 text-right">
@@ -203,26 +205,27 @@ export function CarlitosAssistant() {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "group relative flex items-center justify-center w-16 h-16 bg-white text-primary-900 shadow-lg transition-transform hover:scale-110 active:scale-95 border-2 border-primary-100",
-                    // Heart shape using clip-path could be used, but a rounded button with a large heart icon is cleaner and more accessible for a chat button
+                    "group relative flex items-center justify-center w-16 h-16 bg-white text-primary-900 shadow-xl transition-transform hover:scale-110 active:scale-95 border border-primary-100",
                     "rounded-full"
                 )}
-                aria-label="Abrir assistente virtual Carlitos"
+                aria-label="Abrir assistente virtual Nova"
             >
-                {/* Heart Pulse Effect */}
+                {/* Pulse Effect */}
                 <div className="absolute inset-0 rounded-full border-2 border-primary-200 animate-ping opacity-20 group-hover:opacity-40"></div>
 
                 {isOpen ? (
                     <X className="h-8 w-8 transition-transform" />
                 ) : (
-                    <Heart className="h-8 w-8 text-primary-900 fill-primary-900 animate-pulse drop-shadow-sm" />
+                    <div className="flex items-center justify-center relative">
+                        <MessageCircle className="h-9 w-9 text-primary-900" strokeWidth={1.5} />
+                        <Cog className="h-4 w-4 text-primary-900 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-[1px]" />
+                    </div>
                 )}
 
-                {/* Notification Badge if closed (optional logic could go here) */}
                 {!isOpen && (
                     <span className="absolute top-0 right-0 flex h-4 w-4">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
                     </span>
                 )}
             </button>

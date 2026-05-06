@@ -66,6 +66,7 @@ export async function POST(
                 riskLevel: insights.riskLevel,
                 recommendedActions: insights.recommendedActions,
                 legalFramework: insights.legalFramework,
+                suggestedVerdict: insights.suggestedVerdict,
             },
             create: {
                 complaintId: complaint.id,
@@ -76,6 +77,7 @@ export async function POST(
                 riskLevel: insights.riskLevel,
                 recommendedActions: insights.recommendedActions,
                 legalFramework: insights.legalFramework,
+                suggestedVerdict: insights.suggestedVerdict,
             }
         })
 

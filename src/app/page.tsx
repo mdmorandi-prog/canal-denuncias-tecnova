@@ -23,12 +23,12 @@ export default function HomePage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100">
             {/* Header */}
-            <header className="bg-primary-900 text-white py-4">
+            <header className="bg-authority text-white py-4 shadow-md">
                 <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Image
-                            src="/logo-hsc.png"
-                            alt="Hospital São Carlos"
+                            src="/logo-tecnova.png"
+                            alt="Tecnova"
                             width={180}
                             height={60}
                             className="h-14 w-auto"
@@ -46,7 +46,7 @@ export default function HomePage() {
             </header>
 
             {/* Hero Section */}
-            <section className="bg-primary-900 text-white py-16 pb-24">
+            <section className="bg-authority text-white py-16 pb-24">
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <h2 className="text-4xl font-bold mb-6">
                         Sua voz importa. Sua segurança é prioridade.
@@ -58,14 +58,14 @@ export default function HomePage() {
                     <div className="flex flex-wrap justify-center gap-4">
                         <Link
                             href="/nova-denuncia?tipo=anonimo"
-                            className="btn-secondary flex items-center gap-2"
+                            className="btn-primary flex items-center gap-2 shadow-lg"
                         >
                             <Lock className="h-5 w-5" />
                             Denunciar Anonimamente
                         </Link>
                         <Link
                             href="/nova-denuncia?tipo=identificado"
-                            className="bg-white/20 text-white border-2 border-white px-6 py-3 rounded-lg font-medium hover:bg-white/30 transition flex items-center gap-2"
+                            className="btn-secondary flex items-center gap-2"
                         >
                             <UserX className="h-5 w-5" />
                             Identificar-me na Denúncia
@@ -109,8 +109,8 @@ export default function HomePage() {
                     </div>
 
                     <div className="glass-card rounded-xl p-6 text-center animate-fadeIn" style={{ animationDelay: '0.1s' }}>
-                        <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Lock className="h-7 w-7 text-blue-600" />
+                        <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Lock className="h-7 w-7 text-slate-600" />
                         </div>
                         <h3 className="font-semibold text-lg mb-2">Confidencial</h3>
                         <p className="text-neutral-600 text-sm">
@@ -181,13 +181,13 @@ export default function HomePage() {
 
                     <div className="bg-white rounded-lg p-5 border border-neutral-200 hover:border-primary-300 transition">
                         <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                                <Shield className="h-5 w-5 text-blue-600" />
+                            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
+                                <Shield className="h-5 w-5 text-emerald-600" />
                             </div>
                             <div>
-                                <h4 className="font-semibold mb-1">Segurança do Paciente</h4>
+                                <h4 className="font-semibold mb-1">Segurança do Trabalho</h4>
                                 <p className="text-sm text-neutral-600">
-                                    Práticas que coloquem em risco a saúde ou integridade dos pacientes.
+                                    Práticas que coloquem em risco a saúde ou segurança dos trabalhadores.
                                 </p>
                             </div>
                         </div>
@@ -353,7 +353,7 @@ export default function HomePage() {
             </section>
 
             {/* CTA Final */}
-            <section className="bg-primary-900 text-white py-16">
+            <section className="bg-authority text-white py-16">
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <h2 className="text-3xl font-bold mb-4">Pronto para fazer sua denúncia?</h2>
                     <p className="text-primary-200 mb-8">
@@ -362,14 +362,14 @@ export default function HomePage() {
                     <div className="flex flex-wrap justify-center gap-4">
                         <Link
                             href="/nova-denuncia?tipo=anonimo"
-                            className="btn-secondary flex items-center gap-2"
+                            className="btn-primary flex items-center gap-2 shadow-lg"
                         >
                             <Lock className="h-5 w-5" />
                             Denunciar Anonimamente
                         </Link>
                         <Link
                             href="/nova-denuncia?tipo=identificado"
-                            className="bg-white/20 text-white border-2 border-white px-6 py-3 rounded-lg font-medium hover:bg-white/30 transition flex items-center gap-2"
+                            className="btn-secondary flex items-center gap-2"
                         >
                             <UserX className="h-5 w-5" />
                             Identificar-me

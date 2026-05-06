@@ -21,7 +21,7 @@ const TIPOS_OCORRENCIA = [
     { value: 'assedio_moral', label: 'Assédio Moral', desc: 'Humilhações, isolamento, perseguição' },
     { value: 'assedio_sexual', label: 'Assédio Sexual', desc: 'Propostas ou comportamentos sexuais indesejados' },
     { value: 'corrupcao', label: 'Corrupção', desc: 'Fraudes, desvios, propinas' },
-    { value: 'seguranca_paciente', label: 'Segurança do Paciente', desc: 'Práticas que colocam pacientes em risco' },
+    { value: 'seguranca_trabalho', label: 'Segurança do Trabalho', desc: 'Práticas que colocam em risco a segurança dos colaboradores' },
     { value: 'violacao_normas', label: 'Violação de Normas', desc: 'Descumprimento de protocolos e regras' },
     { value: 'outros', label: 'Outros', desc: 'Outras irregularidades' },
 ]
@@ -30,7 +30,6 @@ const TURNOS = [
     { value: 'manha', label: 'Manhã' },
     { value: 'tarde', label: 'Tarde' },
     { value: 'noite', label: 'Noite' },
-    { value: 'integral', label: 'Integral (8:45h)' },
 ]
 
 function NovaDenunciaContent() {
@@ -174,7 +173,7 @@ function NovaDenunciaContent() {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100">
-            <header className="bg-primary-900 text-white py-4">
+            <header className="bg-authority text-white py-4 shadow-md">
                 <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2 text-primary-200 hover:text-white transition">
                         <ChevronLeft className="h-5 w-5" />
@@ -182,8 +181,8 @@ function NovaDenunciaContent() {
                     </Link>
                     <div className="flex items-center gap-4">
                         <Image
-                            src="/logo-hsc.png"
-                            alt="Hospital São Carlos"
+                            src="/logo-tecnova.png"
+                            alt="Tecnova"
                             width={180}
                             height={60}
                             className="h-14 w-auto"
@@ -222,11 +221,11 @@ function NovaDenunciaContent() {
                     <div className="flex items-center gap-4">
                         {[1, 2, 3].map((s) => (
                             <div key={s} className="flex items-center gap-2">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm ${step >= s ? 'bg-primary-900 text-white' : 'bg-neutral-200 text-neutral-500'
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm ${step >= s ? 'bg-authority text-white' : 'bg-neutral-200 text-neutral-500'
                                     }`}>
                                     {s}
                                 </div>
-                                {s < 3 && <div className={`w-12 h-1 ${step > s ? 'bg-primary-900' : 'bg-neutral-200'}`} />}
+                                {s < 3 && <div className={`w-12 h-1 ${step > s ? 'bg-authority' : 'bg-neutral-200'}`} />}
                             </div>
                         ))}
                     </div>
@@ -280,7 +279,7 @@ function NovaDenunciaContent() {
                                         name="sector"
                                         value={formData.sector}
                                         onChange={handleChange}
-                                        placeholder="Ex: UTI, Emergência, Administrativo"
+                                        placeholder="Ex: Produção, Logística, Administrativo"
                                         className="input-field"
                                     />
                                 </div>
@@ -348,7 +347,7 @@ function NovaDenunciaContent() {
                                             name="accusedPosition"
                                             value={formData.accusedPosition}
                                             onChange={handleChange}
-                                            placeholder="Ex: Enfermeiro Chefe, Gerente"
+                                            placeholder="Ex: Supervisor, Gerente"
                                             className="input-field"
                                         />
                                     </div>
@@ -470,7 +469,7 @@ function NovaDenunciaContent() {
                                                     name="reporterEmail"
                                                     value={formData.reporterEmail}
                                                     onChange={handleChange}
-                                                    placeholder="seu@email.com"
+                                                    placeholder="admin@tecnova.ind.br"
                                                     className="input-field"
                                                 />
                                             </div>

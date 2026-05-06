@@ -90,7 +90,7 @@ export const authConfig: NextAuthConfig = {
     session: {
         strategy: "jwt",
     },
-    secret: process.env.NEXTAUTH_SECRET || "canal-denuncias-hsc-secret-key-2024",
+    secret: process.env.NEXTAUTH_SECRET || "canal-denuncias-tecnova-secret-key-2026",
 }
 
 export const { auth, signIn, signOut } = NextAuth(authConfig)

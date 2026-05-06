@@ -23,7 +23,8 @@ export async function GET(
             where: { protocol },
             include: {
                 messages: {
-                    orderBy: { createdAt: 'asc' }
+                    orderBy: { createdAt: 'asc' },
+                    include: { attachments: true }
                 },
                 attachments: true,
                 aiAnalysis: true

@@ -1,6 +1,6 @@
-# Canal de Denúncias HSC
+# Canal de Denúncias Tecnova
 
-Sistema de Canal de Denúncias para o Hospital Santa Catarina, em conformidade com a **Lei 14.457/22** (Programa Emprega + Mulheres) e **NR1** (Gestão de Segurança e Saúde no Trabalho).
+Sistema de Canal de Denúncias para o Tecnova Santa Catarina, em conformidade com a **Lei 14.457/22** (Programa Emprega + Mulheres) e **NR1** (Gestão de Segurança e Saúde no Trabalho).
 
 ## 🚀 Início Rápido
 
@@ -96,4 +96,4 @@ Desenvolvido por **DM Consultoria em TI Ltda**
 
 ---
 
-© 2024 Hospital Santa Catarina. Todos os direitos reservados.
+© 2024 Tecnova Santa Catarina. Todos os direitos reservados.

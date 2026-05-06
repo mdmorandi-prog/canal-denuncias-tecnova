@@ -1,6 +1,3 @@
-// Prisma Schema - Canal de Denúncias HSC
-// Sistema de Canal de Denúncias conforme NR1 e Lei 14.457/22
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
@@ -11,148 +8,109 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-// ==================== DENÚNCIAS ====================
-
 model Complaint {
-  id              String    @id @default(cuid())
-  protocol        String    @unique // Hash SHA-256 truncado para acompanhamento
-  
-  // Tipo de ocorrência
-  type            String    // assedio_moral, assedio_sexual, corrupcao, seguranca_paciente, outros
-  
-  // Localização
-  unit            String?   // Unidade hospitalar
-  sector          String?   // Setor
-  shift           String?   // Turno
-  occurrenceDate  DateTime? // Data da ocorrência
-  
-  // Denunciado
-  accusedName     String?   // Nome do denunciado
-  accusedPosition String?   // Cargo do denunciado
-  
-  // Detalhes
-  description     String    // Descrição detalhada
-  witnesses       String?   // Testemunhas (JSON array)
-  
-  // Denunciante
-  isAnonymous     Boolean   @default(true)
-  reporterName    String?   // Nome (se identificado)
-  reporterEmail   String?   // E-mail para contato
-  reporterPhone   String?   // Telefone para contato
-  wantsResponse   Boolean   @default(false) // Deseja retorno?
-  
-  // Status
-  status          String    @default("nova") // nova, em_analise, procedente, improcedente, arquivada
-  priority        String    @default("normal") // baixa, normal, alta, urgente
-  
-  // Datas
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id              String                @id @default(cuid())
+  protocol        String                @unique
+  type            String
+  unit            String?
+  sector          String?
+  shift           String?
+  occurrenceDate  DateTime?
+  accusedName     String?
+  accusedPosition String?
+  description     String
+  witnesses       String?
+  isAnonymous     Boolean               @default(true)
+  reporterName    String?
+  reporterEmail   String?
+  reporterPhone   String?
+  wantsResponse   Boolean               @default(false)
+  status          String                @default("nova")
+  priority        String                @default("normal")
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
   closedAt        DateTime?
-  
-  // Relacionamentos
+  assignedTo      String?
+  actions         ComplaintAction[]
+  aiAnalysis      ComplaintAnalysis?
   attachments     ComplaintAttachment[]
   messages        ComplaintMessage[]
-  aiAnalysis      ComplaintAnalysis?
-  actions         ComplaintAction[]
-  
-  // Responsável pela análise
-  assignedTo      String?   // ID do membro do comitê
 }
-
-// ==================== ANÁLISE IA ====================
 
 model ComplaintAnalysis {
-  id          String    @id @default(cuid())
-  complaintId String    @unique
-  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  
-  sentiment   String    // Positivo, Neutro, Negativo, etc
-  urgency     String    // Baixa, Normal, Alta, Critica
-  summary     String    @db.Text
-  keyEntities String    @db.Text // Stored as JSON string arrays
-
-  // Campos expandidos (Nexus IA v2)
-  riskLevel           String?   // Baixo, Moderado, Alto, Crítico
-  recommendedActions  String?   @db.Text // JSON array of recommended steps
-  legalFramework      String?   @db.Text // JSON array of relevant laws
-  
-  createdAt   DateTime  @default(now())
+  id                 String    @id @default(cuid())
+  complaintId        String    @unique
+  sentiment          String
+  urgency            String
+  summary            String
+  keyEntities        String
+  riskLevel          String?
+  recommendedActions String?
+  legalFramework     String?
+  suggestedVerdict   String?
+  createdAt          DateTime  @default(now())
+  complaint          Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
 }
-
-// ==================== ANEXOS (EVIDÊNCIAS) ====================
 
 model ComplaintAttachment {
   id          String    @id @default(cuid())
   complaintId String
-  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  
-  filename    String    // Nome original do arquivo
-  filepath    String    // Caminho criptografado no servidor
-  mimetype    String    // Tipo do arquivo
-  size        Int       // Tamanho em bytes
-  
+  messageId   String?
+  actionId    String?
+  filename    String
+  filepath    String
+  mimetype    String
+  size        Int
   createdAt   DateTime  @default(now())
+  
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  message     ComplaintMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  action      ComplaintAction?  @relation(fields: [actionId], references: [id], onDelete: Cascade)
 }
-
-// ==================== MENSAGENS (ACOMPANHAMENTO) ====================
 
 model ComplaintMessage {
   id          String    @id @default(cuid())
   complaintId String
-  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  
-  sender      String    // "denunciante" ou "comite"
-  message     String    // Conteúdo da mensagem
+  sender      String
+  message     String
   isRead      Boolean   @default(false)
-  
   createdAt   DateTime  @default(now())
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  attachments ComplaintAttachment[]
 }
-
-// ==================== MEMBROS DO COMITÊ ====================
 
 model CommitteeMember {
-  id          String    @id @default(cuid())
-  name        String
-  email       String    @unique
-  password    String
-  role        String    @default("membro") // coordenador, membro
-  active      Boolean   @default(true)
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("membro")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
-
-// ==================== LOG DE AUDITORIA ====================
 
 model AuditLog {
-  id          String    @id @default(cuid())
-  action      String    // visualizacao, alteracao_status, resposta, etc.
-  entityType  String    // complaint, message
-  entityId    String
-  userId      String?   // Membro do comitê (null se sistema)
-  details     String?   // JSON com detalhes
-  
-  createdAt   DateTime  @default(now())
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  userId     String?
+  details    String?
+  createdAt  DateTime @default(now())
 }
-
-// ==================== CONFIGURAÇÕES DO SISTEMA ====================
 
 model EmailConfig {
-  id          String    @id @default(cuid())
-  host        String
-  port        Int
-  secure      Boolean   @default(false)
-  user        String
-  pass        String    // Armazenar criptografado futuramente? Por enquanto plaintext ou base64 simples
-  from        String    @default("Canal de Denúncias <no-reply@hospital.com>")
-  
-  updatedAt   DateTime  @updatedAt
-  updatedBy   String?   // ID do usuário que atualizou
+  id        String   @id @default(cuid())
+  host      String
+  port      Int
+  secure    Boolean  @default(false)
+  user      String
+  pass      String
+  from      String   @default("Canal de Denúncias <no-reply@tecnova.ind.br>")
+  updatedAt DateTime @updatedAt
+  updatedBy String?
 }
-
-// ==================== TOKENS DE SEGURANÇA ====================
 
 model TwoFactorToken {
   id      String   @id @default(cuid())
@@ -165,22 +123,19 @@ model TwoFactorToken {
 
 model EmailTemplate {
   id        String   @id @default(cuid())
-  type      String   @unique // 'RECEIVED', 'STATUS_UPDATE', 'RESOLVED'
+  type      String   @unique
   subject   String
-  body      String   @db.Text
+  body      String
   updatedAt DateTime @updatedAt
 }
-
-// ==================== DIÁRIO DE INVESTIGAÇÃO ====================
 
 model ComplaintAction {
   id          String    @id @default(cuid())
   complaintId String
-  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-
-  authorName  String    // Nome do membro do comitê
-  actionType  String    // entrevista, documento, cautelar, notificacao, reuniao, outro
-  description String    @db.Text
-
+  authorName  String
+  actionType  String
+  description String
   createdAt   DateTime  @default(now())
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  attachments ComplaintAttachment[]
 }

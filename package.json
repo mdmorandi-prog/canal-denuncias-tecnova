@@ -1,15 +1,15 @@
 {
-  "name": "canal-denuncias-hsc",
+  "name": "canal-denuncias-tecnova",
   "version": "1.0.0",
-  "description": "Canal de Denúncias HSC - Sistema de Compliance NR1",
+  "description": "Canal de Denúncias Tecnova - Sistema de Compliance NR1",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:seed": "npx ts-node prisma/seed.ts"
   },
   "keywords": [
     "compliance",
@@ -27,12 +27,14 @@
     "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "@vercel/blob": "^2.3.3",
     "autoprefixer": "^10.4.24",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.563.0",
     "next": "^15.1.7",
     "next-auth": "^5.0.0-beta.30",

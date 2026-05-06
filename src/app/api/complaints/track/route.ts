@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
                         message: true,
                         createdAt: true,
                         isRead: true,
+                        attachments: true,
                     },
                     orderBy: { createdAt: 'asc' }
                 }

@@ -25,6 +25,7 @@ import {
     RefreshCw,
     BookOpen,
     PlusCircle,
+    Paperclip,
 } from 'lucide-react'
 
 import { AutoLogoutGuard } from '@/components/AutoLogoutGuard'
@@ -37,6 +38,7 @@ interface Message {
     message: string
     createdAt: string
     isRead: boolean
+    attachments?: Attachment[]
 }
 
 interface Attachment {
@@ -69,15 +71,16 @@ interface Complaint {
     updatedAt: string
     messages: Message[]
     attachments: Attachment[]
-    aiAnalysis?: {
-        sentiment: string
-        urgency: string
-        summary: string
-        keyEntities: string
-        riskLevel?: string | null
-        recommendedActions?: string | null
-        legalFramework?: string | null
-    } | null
+        aiAnalysis?: {
+            sentiment: string
+            urgency: string
+            summary: string
+            keyEntities: string
+            riskLevel?: string | null
+            recommendedActions?: string | null
+            legalFramework?: string | null
+            suggestedVerdict?: string | null
+        } | null
 }
 
 interface ComplaintAction {
@@ -86,6 +89,7 @@ interface ComplaintAction {
     actionType: string
     description: string
     createdAt: string
+    attachments?: Attachment[]
 }
 
 const STATUS_OPTIONS = [
@@ -98,7 +102,7 @@ const STATUS_OPTIONS = [
 
 const PRIORITY_OPTIONS = [
     { value: 'baixa', label: 'Baixa', color: 'bg-green-100 text-green-800' },
-    { value: 'normal', label: 'Normal', color: 'bg-blue-100 text-blue-800' },
+    { value: 'normal', label: 'Normal', color: 'bg-slate-100 text-slate-800' },
     { value: 'alta', label: 'Alta', color: 'bg-orange-100 text-orange-800' },
     { value: 'urgente', label: 'Urgente', color: 'bg-red-100 text-red-800' },
 ]
@@ -107,10 +111,21 @@ const TIPO_LABELS: Record<string, string> = {
     assedio_moral: 'Assédio Moral',
     assedio_sexual: 'Assédio Sexual',
     corrupcao: 'Corrupção',
-    seguranca_paciente: 'Segurança do Paciente',
+    seguranca_trabalho: 'Segurança do Trabalho',
     violacao_normas: 'Violação de Normas',
     outros: 'Outros',
 }
+
+const DIARY_TYPES = [
+    { value: 'entrevista', label: 'Entrevista', icon: MessageCircle, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200' },
+    { value: 'documento', label: 'Documento', icon: FileText, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200' },
+    { value: 'cautelar', label: 'Cautelar', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
+    { value: 'notificacao', label: 'Notificação', icon: Send, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
+    { value: 'reuniao', label: 'Reunião', icon: Calendar, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' },
+    { value: 'juridico', icon: Activity, label: 'Jurídico', color: 'text-slate-700', bg: 'bg-slate-100', border: 'border-slate-300' },
+    { value: 'ia_sugestao', label: 'Sugerido pela IA', icon: Sparkles, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+    { value: 'outro', label: 'Outro', icon: PlusCircle, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200' },
+]
 
 function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) {
     const { protocol } = use(params)
@@ -121,6 +136,7 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
 
     // Actions State
     const [newMessage, setNewMessage] = useState('')
+    const [selectedChatFile, setSelectedChatFile] = useState<File | null>(null)
     const [sendingMessage, setSendingMessage] = useState(false)
     const [isUpdating, setIsUpdating] = useState(false)
     const [isReanalyzing, setIsReanalyzing] = useState(false)
@@ -172,6 +188,7 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
     const [diaryAuthor, setDiaryAuthor] = useState('')
     const [diaryType, setDiaryType] = useState('entrevista')
     const [diaryDescription, setDiaryDescription] = useState('')
+    const [selectedDiaryFile, setSelectedDiaryFile] = useState<File | null>(null)
     const [savingAction, setSavingAction] = useState(false)
     const [reanalyzingWithContext, setReanalyzingWithContext] = useState(false)
 
@@ -192,7 +209,20 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                 body: JSON.stringify({ authorName: diaryAuthor, actionType: diaryType, description: diaryDescription }),
             })
             if (!res.ok) { alert('Erro ao registrar ação.'); return }
+            const savedAction = await res.json()
+
+            if (selectedDiaryFile && savedAction.id) {
+                const formData = new FormData()
+                formData.append('file', selectedDiaryFile)
+                formData.append('actionId', savedAction.id)
+                await fetch(`/api/complaints/${protocol}/attachments`, {
+                    method: 'POST',
+                    body: formData
+                })
+            }
+
             setDiaryDescription('')
+            setSelectedDiaryFile(null)
             await fetchDiaryActions()
         } finally {
             setSavingAction(false)
@@ -222,8 +252,20 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
             })
 
             if (!response.ok) throw new Error('Erro ao enviar mensagem')
+            const sentMsg = await response.json()
+
+            if (selectedChatFile && sentMsg.id) {
+                const formData = new FormData()
+                formData.append('file', selectedChatFile)
+                formData.append('messageId', sentMsg.id)
+                await fetch(`/api/complaints/${protocol}/attachments`, {
+                    method: 'POST',
+                    body: formData
+                })
+            }
 
             setNewMessage('')
+            setSelectedChatFile(null)
             fetchComplaint() // Refresh to show new message
         } catch (err) {
             alert('Erro ao enviar mensagem')
@@ -280,12 +322,16 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                     <button
                         onClick={() => exportToPDF({
                             elementId: 'pdf-content',
-                            title: 'Canal de Denúncias HSC - Relatório Confidencial',
-                            filename: `Denuncia_${complaint.protocol}`,
-                            protocol: complaint.protocol
+                            title: 'Relatório de Investigação de Compliance',
+                            filename: `Relatorio-Tecnova-${complaint.protocol}`,
+                            protocol: complaint.protocol,
+                            data: {
+                                ...complaint,
+                                actions: diaryActions
+                            }
                         })}
                         className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
-                        title="Exportar Denúncia para PDF"
+                        title="Exportar Relatório Profissional"
                     >
                         <Download className="h-4 w-4" />
                         Exportar PDF
@@ -387,11 +433,28 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
 
                                     return (
                                         <div className="space-y-5">
-                                            {/* Summary */}
-                                            <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg">
-                                                <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Resumo Executivo</p>
-                                                <p className="text-sm text-slate-700 leading-relaxed">{complaint.aiAnalysis.summary}</p>
-                                            </div>
+                                                {/* Summary */}
+                                                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg">
+                                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Resumo Executivo</p>
+                                                    <p className="text-sm text-slate-700 leading-relaxed">{complaint.aiAnalysis?.summary}</p>
+                                                </div>
+
+                                                {/* Suggested Verdict */}
+                                                {complaint.aiAnalysis?.suggestedVerdict && 
+                                                 complaint.aiAnalysis.suggestedVerdict !== "Investigação em curso" && (
+                                                    <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg shadow-sm border-l-4 border-l-emerald-500">
+                                                        <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                                                            <CheckCircle className="h-3.5 w-3.5" />
+                                                            Parecer Sugerido pela AuditorIA
+                                                        </p>
+                                                        <p className="text-base font-bold text-slate-900 leading-relaxed">
+                                                            {complaint.aiAnalysis.suggestedVerdict}
+                                                        </p>
+                                                        <p className="text-[10px] text-emerald-600 mt-2 font-medium">
+                                                            Evidências suficientes detectadas no diário de ações para esta conclusão.
+                                                        </p>
+                                                    </div>
+                                                )}
 
                                             {/* Metrics Grid */}
                                             <div className="grid grid-cols-3 gap-3">
@@ -418,9 +481,43 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                                     </p>
                                                     <ol className="space-y-2">
                                                         {actions.map((action, idx) => (
-                                                            <li key={idx} className="flex items-start gap-2.5 text-sm">
-                                                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center mt-0.5">{idx + 1}</span>
-                                                                <span className="text-slate-700">{action}</span>
+                                                            <li key={idx} className="flex items-center justify-between gap-2.5 text-sm group">
+                                                                <div className="flex items-start gap-2.5">
+                                                                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center mt-0.5">{idx + 1}</span>
+                                                                    <span className="text-slate-700">{action}</span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setDiaryDescription(action);
+                                                                        
+                                                                        // Auto-detect type
+                                                                        const lower = action.toLowerCase();
+                                                                        if (lower.includes('entrevista') || lower.includes('ouvir')) setDiaryType('entrevista');
+                                                                        else if (lower.includes('documento') || lower.includes('evidência') || lower.includes('arquivo')) setDiaryType('documento');
+                                                                        else if (lower.includes('jurídico') || lower.includes('lei') || lower.includes('legal')) setDiaryType('juridico');
+                                                                        else if (lower.includes('notific') || lower.includes('comunic')) setDiaryType('notificacao');
+                                                                        else if (lower.includes('reunião') || lower.includes('comitê')) setDiaryType('reuniao');
+                                                                        else if (lower.includes('afastamento') || lower.includes('suspensão')) setDiaryType('cautelar');
+                                                                        else setDiaryType('ia_sugestao');
+
+                                                                        // Scroll to diary section
+                                                                        const diarySection = document.getElementById('diary-section');
+                                                                        if (diarySection) {
+                                                                            diarySection.scrollIntoView({ behavior: 'smooth' });
+                                                                            // Highlight the diary form briefly
+                                                                            const form = diarySection.querySelector('.bg-slate-50');
+                                                                            if (form) {
+                                                                                form.classList.add('ring-2', 'ring-indigo-500', 'ring-offset-2');
+                                                                                setTimeout(() => form.classList.remove('ring-2', 'ring-indigo-500', 'ring-offset-2'), 2000);
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1"
+                                                                    title="Usar esta sugestão no diário"
+                                                                >
+                                                                    <PlusCircle className="h-3 w-3" />
+                                                                    USAR
+                                                                </button>
                                                             </li>
                                                         ))}
                                                     </ol>
@@ -478,7 +575,7 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                         </div>
 
                         {/* Diário de Investigação Interno */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div id="diary-section" className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                             {/* Header */}
                             <div className="bg-gradient-to-r from-slate-700 to-slate-900 px-6 py-4 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -490,7 +587,7 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                     <button
                                         onClick={handleReanalyzeWithContext}
                                         disabled={reanalyzingWithContext}
-                                        className="flex items-center gap-1.5 text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 text-xs bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
                                     >
                                         {reanalyzingWithContext
                                             ? <><Loader2 className="h-3 w-3 animate-spin" /> Analisando...</>
@@ -504,36 +601,67 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                 {/* Form */}
                                 <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-3">
                                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Registrar nova medida</p>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <input
-                                            type="text"
-                                            placeholder="Seu nome (membro do comitê)"
-                                            value={diaryAuthor}
-                                            onChange={e => setDiaryAuthor(e.target.value)}
-                                            className="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 outline-none"
-                                        />
-                                        <select
-                                            value={diaryType}
-                                            onChange={e => setDiaryType(e.target.value)}
-                                            className="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 outline-none"
-                                        >
-                                            <option value="entrevista">Entrevista realizada</option>
-                                            <option value="documento">Documento coletado</option>
-                                            <option value="cautelar">Medida cautelar aplicada</option>
-                                            <option value="notificacao">Notificação enviada</option>
-                                            <option value="reuniao">Reunião do comitê</option>
-                                            <option value="juridico">Consulta jurídica</option>
-                                            <option value="outro">Outro</option>
-                                        </select>
+                                    <div className="space-y-3">
+                                        <div className="flex gap-3">
+                                            <div className="w-1/3">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Autor"
+                                                    value={diaryAuthor}
+                                                    onChange={e => setDiaryAuthor(e.target.value)}
+                                                    className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-100 outline-none"
+                                                />
+                                            </div>
+                                            <div className="w-2/3 flex flex-wrap gap-2">
+                                                {DIARY_TYPES.map((type) => {
+                                                    const Icon = type.icon;
+                                                    const isSelected = diaryType === type.value;
+                                                    return (
+                                                        <button
+                                                            key={type.value}
+                                                            onClick={() => setDiaryType(type.value)}
+                                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                                                                isSelected 
+                                                                ? `${type.bg} ${type.border} ${type.color} ring-2 ring-offset-1 ring-primary-200 shadow-sm`
+                                                                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300'
+                                                            }`}
+                                                        >
+                                                            <Icon className={`h-3.5 w-3.5 ${isSelected ? type.color : 'text-slate-400'}`} />
+                                                            {type.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
                                     <textarea
                                         rows={3}
                                         placeholder="Descreva detalhadamente o que foi feito..."
                                         value={diaryDescription}
                                         onChange={e => setDiaryDescription(e.target.value)}
-                                        className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 outline-none resize-none"
+                                        className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-100 outline-none resize-none"
                                     />
-                                    <div className="flex justify-end">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="file"
+                                                id="diary-file"
+                                                className="hidden"
+                                                onChange={(e) => setSelectedDiaryFile(e.target.files?.[0] || null)}
+                                            />
+                                            <label
+                                                htmlFor="diary-file"
+                                                className="flex items-center gap-2 text-sm text-slate-600 hover:text-primary-600 cursor-pointer px-2 py-1 rounded hover:bg-slate-100 transition"
+                                            >
+                                                <Paperclip className="h-4 w-4" />
+                                                {selectedDiaryFile ? selectedDiaryFile.name : 'Anexar evidência'}
+                                            </label>
+                                            {selectedDiaryFile && (
+                                                <button onClick={() => setSelectedDiaryFile(null)} className="text-slate-400 hover:text-red-500">
+                                                    <XCircle className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                        </div>
                                         <button
                                             onClick={handleAddAction}
                                             disabled={savingAction || !diaryAuthor.trim() || !diaryDescription.trim()}
@@ -553,16 +681,8 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                         <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
                                         <div className="space-y-4">
                                             {diaryActions.map((action) => {
-                                                const typeConfig: Record<string, { color: string; label: string }> = {
-                                                    entrevista: { color: 'bg-blue-100 text-blue-700', label: 'Entrevista' },
-                                                    documento: { color: 'bg-purple-100 text-purple-700', label: 'Documento' },
-                                                    cautelar: { color: 'bg-red-100 text-red-700', label: 'Cautelar' },
-                                                    notificacao: { color: 'bg-amber-100 text-amber-700', label: 'Notificação' },
-                                                    reuniao: { color: 'bg-green-100 text-green-700', label: 'Reunião' },
-                                                    juridico: { color: 'bg-indigo-100 text-indigo-700', label: 'Jurídico' },
-                                                    outro: { color: 'bg-slate-100 text-slate-600', label: 'Outro' },
-                                                }
-                                                const cfg = typeConfig[action.actionType] || typeConfig.outro
+                                                const cfg = DIARY_TYPES.find(t => t.value === action.actionType) || DIARY_TYPES[DIARY_TYPES.length - 1]
+                                                const Icon = cfg.icon;
                                                 return (
                                                     <div key={action.id} className="pl-10 relative">
                                                         <div className="absolute left-2.5 top-1.5 w-3 h-3 rounded-full bg-slate-400 border-2 border-white" />
@@ -577,6 +697,21 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                                                 </span>
                                                             </div>
                                                             <p className="text-sm text-slate-700 leading-relaxed">{action.description}</p>
+                                                            {action.attachments && action.attachments.length > 0 && (
+                                                                <div className="mt-3 space-y-2">
+                                                                    {action.attachments.map((att: any) => (
+                                                                        <a 
+                                                                            key={att.id} 
+                                                                            href={`/api/complaints/${protocol}/attachments/${att.id}`}
+                                                                            target="_blank"
+                                                                            className="flex items-center gap-2 p-2 bg-white rounded border border-slate-200 text-sm hover:bg-slate-50 transition max-w-sm"
+                                                                        >
+                                                                            <FileText className="h-4 w-4 text-slate-500" />
+                                                                            <span className="truncate flex-1 text-slate-700">{att.filename}</span>
+                                                                        </a>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )
@@ -651,9 +786,9 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                                 <p className="text-xs text-slate-500">{(att.size / 1024).toFixed(1)} KB</p>
                                             </div>
                                             {/* In a real app, this would be a secure download link */}
-                                            <button className="text-primary-600 hover:text-primary-800 text-sm font-medium px-2">
+                                            <a href={`/api/complaints/${protocol}/attachments/${att.id}`} target="_blank" className="text-primary-600 hover:text-primary-800 text-sm font-medium px-2">
                                                 Baixar
-                                            </button>
+                                            </a>
                                         </div>
                                     ))}
                                 </div>
@@ -710,13 +845,55 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                             <p className={`text-[10px] text-right ${msg.sender === 'comite' ? 'text-primary-200' : 'text-slate-400'}`}>
                                                 {new Date(msg.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                                             </p>
+                                            {msg.attachments && msg.attachments.length > 0 && (
+                                                <div className="mt-2 space-y-2">
+                                                    {msg.attachments.map((att: any) => (
+                                                        <a 
+                                                            key={att.id} 
+                                                            href={`/api/complaints/${protocol}/attachments/${att.id}`}
+                                                            target="_blank"
+                                                            className={`flex items-center gap-2 p-2 rounded text-xs transition ${
+                                                                msg.sender === 'comite' 
+                                                                    ? 'bg-primary-700 hover:bg-primary-800 text-white border-primary-500 border' 
+                                                                    : 'bg-white hover:bg-slate-50 border-slate-200 border text-slate-700'
+                                                            }`}
+                                                        >
+                                                            <FileText className="h-3 w-3 shrink-0" />
+                                                            <span className="truncate flex-1">{att.filename}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))
                                 )}
                             </div>
 
                             <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-xl">
+                                {selectedChatFile && (
+                                    <div className="flex items-center justify-between p-2 mb-2 bg-white rounded border border-slate-200 text-sm text-slate-700">
+                                        <div className="flex items-center gap-2 truncate">
+                                            <Paperclip className="h-4 w-4 shrink-0 text-slate-400" />
+                                            <span className="truncate">{selectedChatFile.name}</span>
+                                        </div>
+                                        <button onClick={() => setSelectedChatFile(null)} className="text-slate-400 hover:text-red-500">
+                                            <XCircle className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
                                 <div className="flex gap-2">
+                                    <input
+                                        type="file"
+                                        id="chat-file"
+                                        className="hidden"
+                                        onChange={(e) => setSelectedChatFile(e.target.files?.[0] || null)}
+                                    />
+                                    <label
+                                        htmlFor="chat-file"
+                                        className="flex items-center justify-center px-3 bg-white border border-slate-200 text-slate-500 hover:text-primary-600 cursor-pointer rounded-lg hover:bg-slate-50 transition shrink-0"
+                                    >
+                                        <Paperclip className="h-5 w-5" />
+                                    </label>
                                     <input
                                         type="text"
                                         value={newMessage}
@@ -727,7 +904,7 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                     />
                                     <button
                                         onClick={handleSendMessage}
-                                        disabled={sendingMessage || !newMessage.trim()}
+                                        disabled={sendingMessage || (!newMessage.trim() && !selectedChatFile)}
                                         className="bg-primary-600 text-white p-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
                                     >
                                         {sendingMessage ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}

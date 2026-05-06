@@ -23,7 +23,8 @@ export async function GET(
 
     const actions = await prisma.complaintAction.findMany({
         where: { complaintId: complaint.id },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        include: { attachments: true }
     })
 
     return NextResponse.json(actions)

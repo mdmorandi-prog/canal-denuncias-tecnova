@@ -23,7 +23,7 @@ export default function ConfigPage() {
         secure: false,
         user: '',
         pass: '',
-        from: 'Canal de Denúncias <no-reply@hospital.com>'
+        from: 'Canal de Denúncias <no-reply@tecnova.ind.br>'
     })
 
     useEffect(() => {
@@ -94,7 +94,7 @@ export default function ConfigPage() {
         <div className="min-h-screen bg-neutral-100">
             <AutoLogoutGuard />
             {/* Header */}
-            <header className="bg-primary-900 text-white py-4 shadow-md">
+            <header className="bg-authority text-white py-4 shadow-md">
                 <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link href="/comite" className="flex items-center gap-2 text-primary-200 hover:text-white transition">

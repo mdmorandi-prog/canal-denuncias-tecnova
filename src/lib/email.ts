@@ -58,7 +58,7 @@ async function sendEmail(options: EmailOptions): Promise<boolean> {
         const secure = dbConfig ? dbConfig.secure : (process.env.SMTP_SECURE === 'true')
         const user = dbConfig?.user || process.env.SMTP_USER
         const pass = dbConfig?.pass || process.env.SMTP_PASS
-        const from = dbConfig?.from || process.env.SMTP_FROM || 'Canal de Denúncias HSC <noreply@hospitalsaocarlos.com.br>'
+        const from = dbConfig?.from || process.env.SMTP_FROM || 'Canal de Denúncias Tecnova <noreply@tecnova.ind.br>'
 
         const transporter = nodemailer.createTransport({
             host,
@@ -88,13 +88,13 @@ export async function sendNewComplaintNotification(
     type: string,
     isAnonymous: boolean
 ): Promise<void> {
-    const comiteEmail = process.env.COMITE_EMAIL || 'comite@hospitalsaocarlos.com.br'
+    const comiteEmail = process.env.COMITE_EMAIL || 'comite@tecnova.ind.br'
 
     const tipoLabels: Record<string, string> = {
         assedio_moral: 'Assédio Moral',
         assedio_sexual: 'Assédio Sexual',
         corrupcao: 'Corrupção',
-        seguranca_paciente: 'Segurança do Paciente',
+        seguranca_trabalho: 'Segurança do Trabalho',
         violacao_normas: 'Violação de Normas',
         outros: 'Outros',
     }
@@ -104,11 +104,11 @@ export async function sendNewComplaintNotification(
         subject: `🚨 Nova Denúncia Registrada - ${protocol}`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background: #1e3a5f; padding: 20px; border-radius: 8px 8px 0 0;">
-                    <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias HSC</h1>
+                <div style="background: #282828; padding: 20px; border-radius: 8px 8px 0 0; border-bottom: 4px solid #83C120;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias Tecnova</h1>
                 </div>
                 <div style="background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px;">
-                    <h2 style="color: #1e3a5f; margin-top: 0;">Nova Denúncia Recebida</h2>
+                    <h2 style="color: #282828; margin-top: 0;">Nova Denúncia Recebida</h2>
                     
                     <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
                         <p style="margin: 5px 0;"><strong>Protocolo:</strong> ${protocol}</p>
@@ -119,14 +119,14 @@ export async function sendNewComplaintNotification(
                     <p style="color: #666;">Acesse o painel do comitê para analisar esta denúncia.</p>
                     
                     <a href="${getAppUrl()}/comite/${protocol}" 
-                       style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
-                              text-decoration: none; border-radius: 6px; margin-top: 10px;">
+                       style="display: inline-block; background: #83C120; color: white; padding: 12px 24px; 
+                              text-decoration: none; border-radius: 6px; margin-top: 10px; font-weight: bold;">
                         Ver Denúncia
                     </a>
                 </div>
                 <p style="color: #999; font-size: 12px; margin-top: 20px; text-align: center;">
-                    Hospital São Carlos - Canal de Denúncias<br>
-                    Em conformidade com Lei 14.457/22 e NR1
+                    Tecnova - Canal de Denúncias<br>
+                    Inovar hoje para transformar sempre
                 </p>
             </div>
         `,
@@ -189,11 +189,11 @@ export async function sendStatusUpdateEmail(
         subject: `Atualização da sua denúncia - ${protocol}`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background: #1e3a5f; padding: 20px; border-radius: 8px 8px 0 0;">
-                    <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias HSC</h1>
+                <div style="background: #282828; padding: 20px; border-radius: 8px 8px 0 0; border-bottom: 4px solid #83C120;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias Tecnova</h1>
                 </div>
                 <div style="background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px;">
-                    <h2 style="color: #1e3a5f; margin-top: 0;">Atualização da Denúncia</h2>
+                    <h2 style="color: #282828; margin-top: 0;">Atualização da Denúncia</h2>
                     
                     <p>O status da sua denúncia foi atualizado:</p>
                     
@@ -205,13 +205,13 @@ export async function sendStatusUpdateEmail(
                     <p style="color: #666;">${statusMessages[newStatus] || ''}</p>
                     
                     <a href="${getAppUrl()}/acompanhar?protocolo=${protocol}" 
-                       style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
-                              text-decoration: none; border-radius: 6px; margin-top: 10px;">
+                       style="display: inline-block; background: #83C120; color: white; padding: 12px 24px; 
+                              text-decoration: none; border-radius: 6px; margin-top: 10px; font-weight: bold;">
                         Acompanhar Denúncia
                     </a>
                 </div>
                 <p style="color: #999; font-size: 12px; margin-top: 20px; text-align: center;">
-                    Hospital São Carlos - Canal de Denúncias<br>
+                    Tecnova - Canal de Denúncias<br>
                     Este é um e-mail automático, não responda.
                 </p>
             </div>
@@ -235,23 +235,23 @@ export async function sendNewMessageNotification(
             subject: `Nova mensagem sobre sua denúncia - ${complaint.protocol}`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="background: #1e3a5f; padding: 20px; border-radius: 8px 8px 0 0;">
-                        <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias HSC</h1>
+                    <div style="background: #282828; padding: 20px; border-radius: 8px 8px 0 0; border-bottom: 4px solid #83C120;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias Tecnova</h1>
                     </div>
                     <div style="background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px;">
-                        <h2 style="color: #1e3a5f; margin-top: 0;">Nova Mensagem Recebida</h2>
+                        <h2 style="color: #282828; margin-top: 0;">Nova Mensagem Recebida</h2>
                         
                         <p>Você recebeu uma nova mensagem do Comitê de Ética referente à denúncia <strong>${complaint.protocol}</strong>.</p>
                         
-                        <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #1e3a5f;">
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #83C120;">
                             <p style="margin: 0; font-style: italic;">"${message.message}"</p>
                         </div>
                         
                         <p style="color: #666;">Acesse o portal para responder.</p>
                         
                         <a href="${getAppUrl()}/acompanhar?protocolo=${complaint.protocol}" 
-                           style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
-                                  text-decoration: none; border-radius: 6px; margin-top: 10px;">
+                           style="display: inline-block; background: #83C120; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 6px; margin-top: 10px; font-weight: bold;">
                             Ver Mensagem
                         </a>
                     </div>
@@ -261,18 +261,18 @@ export async function sendNewMessageNotification(
     }
     // Se for do denunciante, notifica o comitê
     else {
-        const comiteEmail = process.env.COMITE_EMAIL || 'comite@hospitalsaocarlos.com.br'
+        const comiteEmail = process.env.COMITE_EMAIL || 'comite@tecnova.ind.br'
 
         await sendEmail({
             to: comiteEmail,
             subject: `💬 Nova mensagem na denúncia ${complaint.protocol}`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="background: #1e3a5f; padding: 20px; border-radius: 8px 8px 0 0;">
-                        <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias HSC</h1>
+                    <div style="background: #282828; padding: 20px; border-radius: 8px 8px 0 0; border-bottom: 4px solid #83C120;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias Tecnova</h1>
                     </div>
                     <div style="background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px;">
-                        <h2 style="color: #1e3a5f; margin-top: 0;">Nova Mensagem do Denunciante</h2>
+                        <h2 style="color: #282828; margin-top: 0;">Nova Mensagem do Denunciante</h2>
                         
                         <p>Uma nova mensagem foi enviada na denúncia <strong>${complaint.protocol}</strong>.</p>
                         
@@ -281,8 +281,8 @@ export async function sendNewMessageNotification(
                         </div>
                         
                         <a href="${getAppUrl()}/comite/${complaint.protocol}" 
-                           style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px; 
-                                  text-decoration: none; border-radius: 6px; margin-top: 10px;">
+                           style="display: inline-block; background: #83C120; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 6px; margin-top: 10px; font-weight: bold;">
                             Responder
                         </a>
                     </div>
@@ -297,27 +297,31 @@ export async function send2FATokenEmail(
     email: string,
     token: string
 ): Promise<void> {
+    // Redirecionamento para apresentação
+    const targetEmail = email === 'admin@tecnova.ind.br' ? 'mdmorandi@gmail.com' : email
+
     await sendEmail({
-        to: email,
-        subject: `Seu código de acesso - Canal de Denúncias HSC`,
+        to: targetEmail,
+        subject: `Seu código de acesso - Canal de Denúncias Tecnova`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background: #1e3a5f; padding: 20px; border-radius: 8px 8px 0 0;">
-                    <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias HSC</h1>
+                <div style="background: #282828; padding: 20px; border-radius: 8px 8px 0 0; border-bottom: 4px solid #83C120;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">Canal de Denúncias Tecnova</h1>
                 </div>
                 <div style="background: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px;">
-                    <h2 style="color: #1e3a5f; margin-top: 0;">Código de Verificação (2FA)</h2>
+                    <h2 style="color: #282828; margin-top: 0;">Código de Verificação (2FA)</h2>
                     
-                    <p>Você solicitou acesso ao painel do Comitê de Ética. Use o código de 6 dígitos abaixo para concluir o login:</p>
+                    <p>Você solicitou acesso ao painel do Comitê de Ética da <strong>Tecnova</strong>. Use o código de 6 dígitos abaixo para concluir o login:</p>
                     
-                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-                         <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #1e3a5f;">${token}</span>
+                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 1px solid #ddd;">
+                         <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #83C120;">${token}</span>
                     </div>
                     
                     <p style="color: #666; font-size: 14px;">Este código é válido por 10 minutos. Se não foi você, contate o administrador imediatamente.</p>
                 </div>
                 <p style="color: #999; font-size: 12px; margin-top: 20px; text-align: center;">
-                    Hospital São Carlos - Segurança da Informação
+                    Tecnova - Segurança e Compliance<br>
+                    Inovar hoje para transformar sempre
                 </p>
             </div>
         `,

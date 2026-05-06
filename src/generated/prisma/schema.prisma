@@ -1,4 +1,4 @@
-// Prisma Schema - Canal de Denúncias HSC
+// Prisma Schema - Canal de Denúncias Tecnova
 // Sistema de Canal de Denúncias conforme NR1 e Lei 14.457/22
 
 generator client {
@@ -18,10 +18,10 @@ model Complaint {
   protocol String @unique // Hash SHA-256 truncado para acompanhamento
 
   // Tipo de ocorrência
-  type String // assedio_moral, assedio_sexual, corrupcao, seguranca_paciente, outros
+  type String // assedio_moral, assedio_sexual, corrupcao, seguranca_trabalho, outros
 
   // Localização
-  unit           String? // Unidade hospitalar
+  unit           String? // Unidade empresaar
   sector         String? // Setor
   shift          String? // Turno
   occurrenceDate DateTime? // Data da ocorrência
@@ -123,7 +123,7 @@ model EmailConfig {
   secure Boolean @default(false)
   user   String
   pass   String // Armazenar criptografado futuramente? Por enquanto plaintext ou base64 simples
-  from   String  @default("Canal de Denúncias <no-reply@hospital.com>")
+  from   String  @default("Canal de Denúncias <no-reply@tecnova.ind.br>")
 
   updatedAt DateTime @updatedAt
   updatedBy String? // ID do usuário que atualizou

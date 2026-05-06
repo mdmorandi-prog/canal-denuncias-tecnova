@@ -14,7 +14,7 @@ async function main() {
             reporterName: 'Denunciante Teste',
             reporterEmail: 'teste@exemplo.com',
             reporterPhone: '11999999999',
-            unit: 'Hospital Central',
+            unit: 'Tecnova Central',
             sector: 'Emergência',
         } as any
     })

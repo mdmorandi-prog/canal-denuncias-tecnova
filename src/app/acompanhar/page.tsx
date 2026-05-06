@@ -15,8 +15,16 @@ import {
     Archive,
     MessageCircle,
     Send,
-    Loader2
+    Loader2,
+    Paperclip,
+    FileText
 } from 'lucide-react'
+
+interface Attachment {
+    id: string
+    filename: string
+    size: number
+}
 
 interface Message {
     id: string
@@ -24,6 +32,7 @@ interface Message {
     message: string
     createdAt: string
     isRead: boolean
+    attachments?: Attachment[]
 }
 
 interface Complaint {
@@ -47,7 +56,7 @@ const TIPO_LABELS: Record<string, string> = {
     assedio_moral: 'Assédio Moral',
     assedio_sexual: 'Assédio Sexual',
     corrupcao: 'Corrupção',
-    seguranca_paciente: 'Segurança do Paciente',
+    seguranca_trabalho: 'Segurança do Trabalho',
     violacao_normas: 'Violação de Normas',
     outros: 'Outros',
 }
@@ -62,6 +71,7 @@ function AcompanharContent() {
     const [error, setError] = useState('')
     const [newMessage, setNewMessage] = useState('')
     const [sendingMessage, setSendingMessage] = useState(false)
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
     const searchComplaint = async () => {
         if (!protocol.trim()) {
@@ -107,8 +117,20 @@ function AcompanharContent() {
             if (!response.ok) {
                 throw new Error('Erro ao enviar mensagem')
             }
+            const sentMsg = await response.json()
+
+            if (selectedFile && sentMsg.id) {
+                const formData = new FormData()
+                formData.append('file', selectedFile)
+                formData.append('messageId', sentMsg.id)
+                await fetch(`/api/complaints/${complaint.protocol}/attachments`, {
+                    method: 'POST',
+                    body: formData
+                })
+            }
 
             setNewMessage('')
+            setSelectedFile(null)
             // Recarregar denúncia para ver nova mensagem
             searchComplaint()
         } catch (err) {
@@ -127,7 +149,7 @@ function AcompanharContent() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100">
             {/* Header */}
-            <header className="bg-primary-900 text-white py-4">
+            <header className="bg-authority text-white py-4">
                 <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2 text-primary-200 hover:text-white transition">
                         <ChevronLeft className="h-5 w-5" />
@@ -135,8 +157,8 @@ function AcompanharContent() {
                     </Link>
                     <div className="flex items-center gap-4">
                         <Image
-                            src="/logo-hsc.png"
-                            alt="Hospital São Carlos"
+                            src="/logo-tecnova.png"
+                            alt="Tecnova"
                             width={180}
                             height={60}
                             className="h-14 w-auto"
@@ -268,6 +290,24 @@ function AcompanharContent() {
                                                 </span>
                                             </div>
                                             <p className="text-sm text-neutral-700">{msg.message}</p>
+                                            {msg.attachments && msg.attachments.length > 0 && (
+                                                <div className="mt-3 space-y-2">
+                                                    {msg.attachments.map(att => (
+                                                        <a 
+                                                            key={att.id} 
+                                                            href={`/api/complaints/${complaint.protocol}/attachments/${att.id}`}
+                                                            target="_blank"
+                                                            className="flex items-center gap-2 p-2 bg-white/50 rounded border border-neutral-200 text-sm hover:bg-white transition"
+                                                        >
+                                                            <FileText className="h-4 w-4 text-neutral-500" />
+                                                            <span className="truncate flex-1">{att.filename}</span>
+                                                            <span className="text-xs text-neutral-400">
+                                                                {(att.size / 1024 / 1024).toFixed(2)} MB
+                                                            </span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))
                                 )}
@@ -275,7 +315,31 @@ function AcompanharContent() {
 
                             {/* Send Message */}
                             <div className="p-4 border-t bg-neutral-50">
+                                {selectedFile && (
+                                    <div className="flex items-center justify-between p-2 mb-2 bg-primary-50 rounded text-sm text-primary-700 border border-primary-100">
+                                        <div className="flex items-center gap-2 truncate">
+                                            <Paperclip className="h-4 w-4 shrink-0" />
+                                            <span className="truncate">{selectedFile.name}</span>
+                                        </div>
+                                        <button onClick={() => setSelectedFile(null)} className="text-primary-500 hover:text-primary-700">
+                                            <XCircle className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
                                 <div className="flex gap-2">
+                                    <input
+                                        type="file"
+                                        id="file-upload"
+                                        className="hidden"
+                                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                    />
+                                    <label
+                                        htmlFor="file-upload"
+                                        className="btn-secondary px-3 flex items-center justify-center cursor-pointer hover:bg-neutral-200 text-neutral-600 rounded-lg shrink-0"
+                                        title="Anexar arquivo"
+                                    >
+                                        <Paperclip className="h-5 w-5" />
+                                    </label>
                                     <input
                                         type="text"
                                         value={newMessage}
@@ -286,8 +350,8 @@ function AcompanharContent() {
                                     />
                                     <button
                                         onClick={sendMessage}
-                                        disabled={sendingMessage || !newMessage.trim()}
-                                        className="btn-primary px-4"
+                                        disabled={sendingMessage || (!newMessage.trim() && !selectedFile)}
+                                        className="btn-primary px-4 shrink-0"
                                     >
                                         {sendingMessage ? (
                                             <Loader2 className="h-5 w-5 animate-spin" />

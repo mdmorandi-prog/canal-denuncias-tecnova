@@ -41,23 +41,23 @@ interface DashboardData {
     monthlyData: MonthlyData[]
 }
 
-// Tons de Azul Petróleo Sóbrios
-const PETROL_COLORS = [
-    '#083344', // Cyan 950
-    '#155e75', // Cyan 800
-    '#0e7490', // Cyan 700
-    '#164e63', // Cyan 900
-    '#075985', // Sky 800
-    '#0c4a6e', // Sky 900
-    '#1e293b', // Slate 800
+// Cores Tecnova: Escala de Cinzas e Verdes Profissionais
+const TECNOVA_COLORS = [
+    '#1e293b', // Slate 800 (Cinza Escuro)
+    '#10b981', // Emerald 500 (Verde Principal)
     '#334155', // Slate 700
+    '#059669', // Emerald 600
+    '#475569', // Slate 600
+    '#10b981', // Emerald 500
+    '#64748b', // Slate 500
+    '#34d399', // Emerald 400
 ]
 
 const TIPO_LABELS: Record<string, string> = {
     assedio_moral: 'Assédio Moral',
     assedio_sexual: 'Assédio Sexual',
     corrupcao: 'Corrupção',
-    seguranca_paciente: 'Segurança do Paciente',
+    seguranca_trabalho: 'Segurança do Trabalho',
     violacao_normas: 'Violação de Normas',
     outros: 'Outros',
 }
@@ -117,10 +117,13 @@ export function ComplaintsDashboard() {
     }, [startDate, endDate])
 
     const handleExportDashboard = async () => {
+        if (!data) return
         await exportToPDF({
             elementId: 'pdf-content',
-            title: 'Canal de Denúncias HSC - Relatório Gerencial',
-            filename: `Dashboard_Denuncias_${new Date().toISOString().split('T')[0]}`
+            title: 'Canal de Denúncias Tecnova - Relatório Gerencial',
+            filename: `Dashboard_Tecnova_${new Date().toISOString().split('T')[0]}`,
+            data: data,
+            type: 'dashboard'
         })
     }
 
@@ -240,7 +243,7 @@ export function ComplaintsDashboard() {
                                         dataKey="value"
                                     >
                                         {data.typeData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={PETROL_COLORS[index % PETROL_COLORS.length]} />
+                                            <Cell key={`cell-${index}`} fill={TECNOVA_COLORS[index % TECNOVA_COLORS.length]} />
                                         ))}
                                     </Pie>
                                     <Tooltip
@@ -309,7 +312,7 @@ export function ComplaintsDashboard() {
                                     />
                                     <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={32}>
                                         {data.departmentData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={PETROL_COLORS[index % PETROL_COLORS.length]} />
+                                            <Cell key={`cell-${index}`} fill={TECNOVA_COLORS[index % TECNOVA_COLORS.length]} />
                                         ))}
                                         <LabelList dataKey="value" position="right" offset={10} style={{ fill: '#64748b', fontSize: 14, fontWeight: 800 }} />
                                     </Bar>
