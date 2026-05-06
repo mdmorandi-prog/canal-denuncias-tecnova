@@ -77,6 +77,11 @@ INSTRUÇÃO CRÍTICA: Ao preencher o campo "legalFramework", cite SOMENTE as lei
 `;
 
 export async function analyzeComplaintData(context: ComplaintContext | string): Promise<ComplaintInsights | null> {
+    // Support both old string-only calls and new context object calls
+    const ctx: ComplaintContext = typeof context === 'string'
+        ? { description: context }
+        : context;
+
     if (!ai) {
         console.warn('⚠️ GEMINI_API_KEY is not set. Using Demo Mode (Simulated AI).');
         
@@ -111,11 +116,6 @@ export async function analyzeComplaintData(context: ComplaintContext | string): 
             ]),
         };
     }
-
-    // Support both old string-only calls and new context object calls
-    const ctx: ComplaintContext = typeof context === 'string'
-        ? { description: context }
-        : context;
 
     const typeLabel: Record<string, string> = {
         assedio_sexual: 'Assédio Sexual',
