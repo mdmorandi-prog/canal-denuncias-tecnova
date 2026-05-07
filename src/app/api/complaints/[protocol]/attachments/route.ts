@@ -43,7 +43,7 @@ export async function POST(
         const cleanActionId = actionId && actionId.trim() !== '' ? actionId : null
 
         const blob = await put(file.name, file, {
-            access: 'private',
+            access: 'public',
             addRandomSuffix: true,
         })
 
