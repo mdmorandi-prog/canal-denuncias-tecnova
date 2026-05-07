@@ -38,16 +38,20 @@ export async function POST(
         }
 
         // Upload to Vercel Blob
+        // Ensure messageId and actionId are null if they are empty strings
+        const cleanMessageId = messageId && messageId.trim() !== '' ? messageId : null
+        const cleanActionId = actionId && actionId.trim() !== '' ? actionId : null
+
         const blob = await put(file.name, file, {
             access: 'private',
+            addRandomSuffix: true,
         })
 
-        // Save to Database
         const attachment = await prisma.complaintAttachment.create({
             data: {
                 complaintId: complaint.id,
-                messageId: messageId || null,
-                actionId: actionId || null,
+                messageId: cleanMessageId,
+                actionId: cleanActionId,
                 filename: file.name,
                 filepath: blob.url,
                 mimetype: file.type,
@@ -58,9 +62,9 @@ export async function POST(
         return NextResponse.json(attachment)
 
     } catch (error) {
-        console.error('Error uploading file:', error)
+        console.error('CRITICAL ERROR uploading attachment:', error)
         return NextResponse.json(
-            { error: 'Erro ao fazer upload do arquivo' },
+            { error: 'Erro ao processar anexo' },
             { status: 500 }
         )
     }

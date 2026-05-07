@@ -26,6 +26,14 @@ interface Attachment {
     size: number
 }
 
+interface Action {
+    id: string
+    description: string
+    actionType: string
+    createdAt: string
+    attachments?: Attachment[]
+}
+
 interface Message {
     id: string
     sender: string
@@ -42,6 +50,7 @@ interface Complaint {
     createdAt: string
     updatedAt: string
     messages: Message[]
+    actions: Action[]
 }
 
 const STATUS_INFO: Record<string, { label: string; icon: typeof Clock; color: string }> = {
@@ -253,6 +262,50 @@ function AcompanharContent() {
                             </div>
                         </div>
 
+                        {/* Investigation Actions (Andamento) */}
+                        {complaint.actions && complaint.actions.length > 0 && (
+                            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                                <div className="p-4 bg-indigo-50 border-b border-indigo-100">
+                                    <h2 className="font-semibold text-indigo-900 flex items-center gap-2">
+                                        <FileText className="h-5 w-5" />
+                                        Andamento da Investigação
+                                    </h2>
+                                </div>
+                                <div className="p-6 space-y-6">
+                                    {complaint.actions.map((action) => (
+                                        <div key={action.id} className="relative pl-6 border-l-2 border-slate-100 last:border-0 pb-6 last:pb-0">
+                                            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-indigo-500 border-4 border-white shadow-sm"></div>
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                                                    {action.actionType.replace('_', ' ')}
+                                                </span>
+                                                <span className="text-xs text-neutral-500">
+                                                    {new Date(action.createdAt).toLocaleDateString('pt-BR')}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-slate-700 mb-3">{action.description}</p>
+                                            
+                                            {action.attachments && action.attachments.length > 0 && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                                    {action.attachments.map(att => (
+                                                        <a 
+                                                            key={att.id} 
+                                                            href={`/api/complaints/${complaint.protocol}/attachments/${att.id}`}
+                                                            target="_blank"
+                                                            className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-200 text-xs hover:bg-white transition"
+                                                        >
+                                                            <Paperclip className="h-3.5 w-3.5 text-slate-400" />
+                                                            <span className="truncate flex-1">{att.filename}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Messages */}
                         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                             <div className="p-4 bg-primary-50 border-b border-primary-100">
@@ -301,9 +354,11 @@ function AcompanharContent() {
                                                         >
                                                             <FileText className="h-4 w-4 text-neutral-500" />
                                                             <span className="truncate flex-1">{att.filename}</span>
-                                                            <span className="text-xs text-neutral-400">
-                                                                {(att.size / 1024 / 1024).toFixed(2)} MB
-                                                            </span>
+                                                             <span className="text-xs text-neutral-400">
+                                                                {att.size > 1024 * 1024 
+                                                                    ? `${(att.size / (1024 * 1024)).toFixed(2)} MB` 
+                                                                    : `${(att.size / 1024).toFixed(1)} KB`}
+                                                             </span>
                                                         </a>
                                                     ))}
                                                 </div>

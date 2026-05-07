@@ -30,6 +30,16 @@ export async function GET(request: NextRequest) {
                         attachments: true,
                     },
                     orderBy: { createdAt: 'asc' }
+                },
+                actions: {
+                    select: {
+                        id: true,
+                        description: true,
+                        createdAt: true,
+                        actionType: true,
+                        attachments: true,
+                    },
+                    orderBy: { createdAt: 'asc' }
                 }
             }
         })

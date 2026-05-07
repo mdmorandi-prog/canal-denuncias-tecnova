@@ -26,6 +26,9 @@ export async function GET(
                     protocol: protocol
                 }
             },
+            include: {
+                attachments: true
+            },
             orderBy: {
                 createdAt: 'asc'
             }

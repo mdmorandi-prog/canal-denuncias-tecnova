@@ -203,13 +203,17 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
     useEffect(() => { fetchDiaryActions() }, [protocol])
 
     const handleAddAction = async () => {
-        if (!diaryAuthor.trim() || !diaryDescription.trim()) return
+        if (!diaryAuthor.trim() || (!diaryDescription.trim() && !selectedDiaryFile)) return
         setSavingAction(true)
         try {
             const res = await fetch(`/api/complaints/${protocol}/actions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ authorName: diaryAuthor, actionType: diaryType, description: diaryDescription }),
+                body: JSON.stringify({ 
+                    authorName: diaryAuthor, 
+                    actionType: diaryType, 
+                    description: diaryDescription || (selectedDiaryFile ? 'Arquivo anexado ao diário' : '') 
+                }),
             })
             if (!res.ok) { alert('Erro ao registrar ação.'); return }
             const savedAction = await res.json()
@@ -244,14 +248,14 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
     }
 
     const handleSendMessage = async () => {
-        if (!newMessage.trim() || !complaint) return
+        if ((!newMessage.trim() && !selectedChatFile) || !complaint) return
 
         setSendingMessage(true)
         try {
             const response = await fetch(`/api/complaints/${protocol}/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: newMessage }),
+                body: JSON.stringify({ message: newMessage || (selectedChatFile ? 'Arquivo enviado' : '') }),
             })
 
             if (!response.ok) throw new Error('Erro ao enviar mensagem')
@@ -811,6 +815,11 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                                                         >
                                                                             <FileText className="h-4 w-4 text-slate-500" />
                                                                             <span className="truncate flex-1 text-slate-700">{att.filename}</span>
+                                                                            <span className="text-[10px] text-slate-400">
+                                                                                {att.size > 1024 * 1024 
+                                                                                    ? `${(att.size / (1024 * 1024)).toFixed(1)} MB` 
+                                                                                    : `${(att.size / 1024).toFixed(0)} KB`}
+                                                                            </span>
                                                                         </a>
                                                                     ))}
                                                                 </div>
