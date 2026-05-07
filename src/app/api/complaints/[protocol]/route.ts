@@ -59,7 +59,7 @@ export async function PATCH(
 
     try {
         const body = await request.json()
-        const { status, priority, assignedTo } = body
+        const { status, priority, assignedTo, deadline } = body
 
         // Verificar se denúncia existe
         const existingComplaint = await prisma.complaint.findUnique({
@@ -75,6 +75,7 @@ export async function PATCH(
         if (status) updateData.status = status
         if (priority) updateData.priority = priority
         if (assignedTo !== undefined) updateData.assignedTo = assignedTo
+        if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline) : null
 
         if (status === 'arquivada' || status === 'procedente' || status === 'improcedente') {
             updateData.closedAt = new Date()

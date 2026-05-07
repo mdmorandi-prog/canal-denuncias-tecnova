@@ -13,6 +13,7 @@ export interface ComplaintInsights {
     recommendedActions: string; // JSON string array
     legalFramework: string;     // JSON string array
     suggestedVerdict?: string;
+    suggestedSla?: number;
 }
 
 interface ComplaintContext {
@@ -115,6 +116,7 @@ export async function analyzeComplaintData(context: ComplaintContext | string): 
                 isAssedio ? "CLT Art. 483 – Rescisão Indireta" : "Lei 12.846/13 – Lei Anticorrupção",
                 "Normas Internas de Conduta Tecnova"
             ]),
+            suggestedSla: isAssedio ? 2 : 5,
         };
     }
 
@@ -178,6 +180,7 @@ Você é a "AuditorIA v2.0", o motor de inteligência do canal de denúncias da 
         6. "recommendedActions": Array de strings — Próximos passos cruciais que AINDA NÃO foram feitos. Se o caso estiver pronto para fechar, deixe este array vazio.
         7. "legalFramework": Array de strings — Artigos aplicáveis.
         8. "suggestedVerdict": String — Se a investigação parecer completa, sugira o veredito final (ex: "Procedente com demissão", "Improcedente por falta de provas", "Arquivamento"). Se ainda faltar algo, deixe vazio ou diga "Investigação em curso".
+        9. "suggestedSla": Number — Sugestão de SLA (prazo em dias úteis) para resposta/conclusão. Ex: 2 para crises/urgentes, 5 para alta gravidade, 15 para moderada, 30 para baixa.
         
 `;
 
@@ -206,6 +209,7 @@ Você é a "AuditorIA v2.0", o motor de inteligência do canal de denúncias da 
                 recommendedActions: JSON.stringify(parsed.recommendedActions || []),
                 legalFramework: JSON.stringify(parsed.legalFramework || []),
                 suggestedVerdict: parsed.suggestedVerdict || "",
+                suggestedSla: typeof parsed.suggestedSla === 'number' ? parsed.suggestedSla : undefined,
             };
 
         } catch (error) {

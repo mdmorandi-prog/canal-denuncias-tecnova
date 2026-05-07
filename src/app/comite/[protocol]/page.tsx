@@ -63,6 +63,7 @@ interface Complaint {
     accusedPosition?: string
     witnesses?: string
     isAnonymous: boolean
+    deadline?: string | null
     reporterName?: string
     reporterEmail?: string
     reporterPhone?: string
@@ -80,6 +81,7 @@ interface Complaint {
             recommendedActions?: string | null
             legalFramework?: string | null
             suggestedVerdict?: string | null
+            suggestedSla?: number | null
         } | null
 }
 
@@ -191,6 +193,7 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
     const [selectedDiaryFile, setSelectedDiaryFile] = useState<File | null>(null)
     const [savingAction, setSavingAction] = useState(false)
     const [reanalyzingWithContext, setReanalyzingWithContext] = useState(false)
+    const [isUpdatingDeadline, setIsUpdatingDeadline] = useState(false)
 
     const fetchDiaryActions = async () => {
         const res = await fetch(`/api/complaints/${protocol}/actions`)
@@ -296,6 +299,30 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
             alert('Erro ao atualizar denúncia')
         } finally {
             setIsUpdating(false)
+        }
+    }
+
+    const handleUpdateDeadline = async (newDeadline: Date | null) => {
+        if (!complaint) return
+        
+        setIsUpdatingDeadline(true)
+        try {
+            const response = await fetch(`/api/complaints/${protocol}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    deadline: newDeadline ? newDeadline.toISOString() : null
+                }),
+            })
+
+            if (!response.ok) throw new Error('Erro ao atualizar prazo')
+            
+            alert('Prazo atualizado com sucesso!')
+            fetchComplaint()
+        } catch (err) {
+            alert('Erro ao atualizar prazo da denúncia')
+        } finally {
+            setIsUpdatingDeadline(false)
         }
     }
 
@@ -571,6 +598,82 @@ function ComplaintDetail({ params }: { params: Promise<{ protocol: string }> }) 
                                         </p>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Gestão de Prazo (SLA) */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-5 w-5 text-white" />
+                                    <h2 className="text-base font-semibold text-white">Gestão de Prazo (SLA)</h2>
+                                </div>
+                            </div>
+                            <div className="p-6">
+                                <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Prazo de Conclusão (Deadline)</label>
+                                        {complaint.deadline ? (
+                                            <div className="flex items-center gap-3">
+                                                <div className={`px-4 py-2 rounded-lg font-bold border ${new Date(complaint.deadline) < new Date() ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                                                    {new Date(complaint.deadline).toLocaleDateString('pt-BR')}
+                                                    {new Date(complaint.deadline) < new Date() && <span className="ml-2 text-xs font-semibold uppercase">(Atrasado)</span>}
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleUpdateDeadline(null)}
+                                                    disabled={isUpdatingDeadline}
+                                                    className="text-xs text-red-500 hover:text-red-700 underline"
+                                                >
+                                                    Remover prazo
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="text-sm text-slate-500 italic">Nenhum prazo definido.</div>
+                                        )}
+                                    </div>
+                                    
+                                    {complaint.aiAnalysis?.suggestedSla && !complaint.deadline && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex-1">
+                                            <div className="flex items-start gap-3">
+                                                <Sparkles className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-sm text-blue-800 font-medium mb-1">
+                                                        A IA sugere um prazo de <span className="font-bold">{complaint.aiAnalysis.suggestedSla} dias</span> para este nível de risco.
+                                                    </p>
+                                                    <button
+                                                        onClick={() => {
+                                                            const deadline = new Date();
+                                                            deadline.setDate(deadline.getDate() + complaint.aiAnalysis!.suggestedSla!);
+                                                            handleUpdateDeadline(deadline);
+                                                        }}
+                                                        disabled={isUpdatingDeadline}
+                                                        className="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded font-medium transition"
+                                                    >
+                                                        {isUpdatingDeadline ? 'Aprovando...' : 'Aprovar Prazo Sugerido'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Manual deadline picker */}
+                                    <div className="flex-1 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+                                        <label className="block text-xs font-medium text-slate-500 mb-2">Definir prazo manualmente:</label>
+                                        <input 
+                                            type="date" 
+                                            className="w-full text-sm rounded-lg border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+                                                    const date = new Date(e.target.value);
+                                                    // adjust for timezone offset if needed to avoid saving previous day
+                                                    date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+                                                    handleUpdateDeadline(date);
+                                                }
+                                            }}
+                                            min={new Date().toISOString().split('T')[0]}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

@@ -67,6 +67,7 @@ export async function POST(
                 recommendedActions: insights.recommendedActions,
                 legalFramework: insights.legalFramework,
                 suggestedVerdict: insights.suggestedVerdict,
+                suggestedSla: insights.suggestedSla,
             },
             create: {
                 complaintId: complaint.id,
@@ -78,6 +79,7 @@ export async function POST(
                 recommendedActions: insights.recommendedActions,
                 legalFramework: insights.legalFramework,
                 suggestedVerdict: insights.suggestedVerdict,
+                suggestedSla: insights.suggestedSla,
             }
         })
 

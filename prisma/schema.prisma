@@ -31,6 +31,7 @@ model Complaint {
   updatedAt       DateTime              @updatedAt
   closedAt        DateTime?
   assignedTo      String?
+  deadline        DateTime?
   actions         ComplaintAction[]
   aiAnalysis      ComplaintAnalysis?
   attachments     ComplaintAttachment[]
@@ -48,6 +49,7 @@ model ComplaintAnalysis {
   recommendedActions String?
   legalFramework     String?
   suggestedVerdict   String?
+  suggestedSla       Int?
   createdAt          DateTime  @default(now())
   complaint          Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
 }
