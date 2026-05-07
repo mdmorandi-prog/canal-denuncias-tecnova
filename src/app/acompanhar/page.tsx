@@ -109,7 +109,7 @@ function AcompanharContent() {
     }
 
     const sendMessage = async () => {
-        if (!newMessage.trim() || !complaint) return
+        if ((!newMessage.trim() && !selectedFile) || !complaint) return
 
         setSendingMessage(true)
 
@@ -119,7 +119,7 @@ function AcompanharContent() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     protocol: complaint.protocol,
-                    message: newMessage
+                    message: newMessage || (selectedFile ? 'Arquivo enviado pelo denunciante' : '')
                 }),
             })
 

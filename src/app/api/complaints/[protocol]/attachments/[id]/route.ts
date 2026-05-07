@@ -11,9 +11,14 @@ export async function GET(
     const { protocol, id } = await params
     const session = await auth()
 
-    // Find complaint
-    const complaint = await prisma.complaint.findUnique({
-        where: { protocol }
+    // Find complaint (case-insensitive)
+    const complaint = await prisma.complaint.findFirst({
+        where: { 
+            protocol: {
+                equals: protocol,
+                mode: 'insensitive'
+            }
+        }
     })
 
     if (!complaint) {
@@ -30,53 +35,45 @@ export async function GET(
     }
 
     try {
-        // Fetch from Vercel Blob
-        // Note: For private blobs, the token is mandatory. For public ones, it's optional.
+        // If it's a public blob, we can just redirect to it for maximum reliability
+        // Public blobs have .public.blob.vercel-storage.com in their URL
+        if (attachment.filepath.includes('.public.blob.')) {
+            return NextResponse.redirect(attachment.filepath)
+        }
+
+        // For private blobs, we still need to proxy
         const blobHeaders: Record<string, string> = {}
         if (process.env.BLOB_READ_WRITE_TOKEN) {
             blobHeaders['Authorization'] = `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
         }
 
         const response = await fetch(attachment.filepath, {
-            headers: blobHeaders
+            headers: blobHeaders,
+            cache: 'no-store'
         })
 
         if (!response.ok) {
             console.error(`Blob fetch failed for ${attachment.filename}: ${response.status} ${response.statusText}`)
-            // If failed with token, try without (maybe it's public)
-            if (blobHeaders['Authorization']) {
-                const retryResponse = await fetch(attachment.filepath)
-                if (retryResponse.ok) {
-                    return serveBlob(retryResponse, attachment)
-                }
-            }
-            throw new Error(`Failed to fetch from Blob: ${response.statusText}`)
+            // Fallback: try to redirect anyway, maybe it's accessible
+            return NextResponse.redirect(attachment.filepath)
         }
 
-        return serveBlob(response, attachment)
+        const blobContent = await response.arrayBuffer()
+
+        return new NextResponse(blobContent, {
+            status: 200,
+            headers: {
+                'Content-Type': attachment.mimetype || 'application/octet-stream',
+                'Content-Disposition': `attachment; filename="${encodeURIComponent(attachment.filename)}"`,
+                'Content-Length': blobContent.byteLength.toString(),
+                'Cache-Control': 'no-store, must-revalidate',
+            }
+        })
 
     } catch (error) {
         console.error('Error downloading file:', error)
-        return NextResponse.json(
-            { error: 'Erro ao fazer download do arquivo' },
-            { status: 500 }
-        )
+        // Final fallback: redirect to the direct URL
+        return NextResponse.redirect(attachment.filepath)
     }
 }
 
-function serveBlob(response: Response, attachment: any) {
-    const headers = new Headers()
-    headers.set('Content-Type', attachment.mimetype || 'application/octet-stream')
-    // RFC 5987 compliant filename encoding
-    const encodedFilename = encodeURIComponent(attachment.filename).replace(/['()]/g, escape).replace(/\*/g, '%2A')
-    headers.set('Content-Disposition', `attachment; filename="${attachment.filename}"; filename*=UTF-8''${encodedFilename}`)
-    
-    if (attachment.size > 0) {
-        headers.set('Content-Length', attachment.size.toString())
-    }
-
-    return new NextResponse(response.body, {
-        status: 200,
-        headers
-    })
-}

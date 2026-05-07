@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Protocolo inválido' }, { status: 400 })
         }
 
-        if (!message || typeof message !== 'string') {
+        if (!message && message !== '') {
             return NextResponse.json({ error: 'Mensagem inválida' }, { status: 400 })
         }
 
